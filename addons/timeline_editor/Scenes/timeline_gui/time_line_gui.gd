@@ -20,7 +20,15 @@ var baseControl:Control
 ## Determines the amount of ticks between each whole beat.
 @export_range(1,16) var snapDivisor:int = 1
 
-
+# Arrays
+## Array of the times in seconds of all whole beats within the song
+var wholeBeatTimes:Array = []
+## Tracks if whole beat times have already been generated
+var wholeBeatTimesGenerated:bool
+## Array of the times in seconds of all half beats within the song
+var halfBeatTimes:Array = []
+## Tracks if half beat times have already been generated
+var halfBeatTimesGenerated:bool
 
 # Values
 ## Length of the timeline in pixels
@@ -29,10 +37,6 @@ var timelineLengthInPixels:float
 var songPosition:float
 ## If applicable, the total amount of whole beats in the song.
 var totalWholeBeats:int
-## Array of the times in seconds of all whole beats within the song
-var wholeBeatTimes:Array = []
-## Tracks if whole beat times have already been generated
-var wholeBeatTimesGenerated:bool
 ## How many seconds a whole beat lasts
 var secondsPerWholeBeat:float
 ## How many whole beats are in a second
@@ -50,6 +54,7 @@ func _process(delta: float) -> void:
 	secondsPerWholeBeat = 60/bpm
 	totalWholeBeats = wholeBeatsPerSecond * songLengthInSeconds
 	_get_whole_beat_times()
+	_get_half_beat_times()
 
 func _get_timeline_length_from_song_length() -> float: 
 	return songLengthInSeconds * bpm
@@ -71,6 +76,13 @@ func _get_whole_beat_times():
 			var beatTime = beatNumber/wholeBeatsPerSecond
 			wholeBeatTimes.append(beatTime)
 			wholeBeatTimesGenerated = true
+
+func _get_half_beat_times():
+	if !halfBeatTimesGenerated and wholeBeatsPerSecond:
+		for beatNumber in range(totalWholeBeats*2):
+			var beatTime = (beatNumber*.5)/wholeBeatsPerSecond
+			halfBeatTimes.append(beatTime)
+			halfBeatTimesGenerated = true
 
 ## Returns true if the necessary values to draw ticks are ready.
 func _get_if_ticks_are_drawable() -> bool:

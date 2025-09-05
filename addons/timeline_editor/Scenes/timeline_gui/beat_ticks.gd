@@ -16,20 +16,17 @@ func _process(delta: float) -> void:
 		queue_redraw()
 		initialTicksDrawn = true
 
-func _draw_beat_ticks(wholeBeatTime:float, tickHeight:float, tickWidth:float, tickColor:Color, rounded:bool):
-	# Whole beats
-	draw_line(Vector2(rootNode._get_timeline_position_from_song_position(wholeBeatTime),rootNode.get_rect().size.y), Vector2(rootNode._get_timeline_position_from_song_position(wholeBeatTime),rootNode.get_rect().size.y-tickHeight), tickColor, tickWidth, true)
+func _draw_beat_ticks(BeatTime:float, tickHeight:float, tickWidth:float, tickColor:Color, rounded:bool):
+	draw_line(Vector2(rootNode._get_timeline_position_from_song_position(BeatTime),rootNode.get_rect().size.y), Vector2(rootNode._get_timeline_position_from_song_position(BeatTime),rootNode.get_rect().size.y-tickHeight), tickColor, tickWidth, true)
 	if rootNode.roundedTicks:
-		draw_circle(Vector2(rootNode._get_timeline_position_from_song_position(wholeBeatTime),rootNode.get_rect().size.y-tickHeight), tickWidth/2, tickColor, true, -1.0, true)
-	# Half Beats
-	if rootNode.snapDivisor == 2:
-		draw_line(Vector2(rootNode._get_timeline_position_from_song_position(wholeBeatTime + (rootNode.secondsPerWholeBeat/2)),rootNode.get_rect().size.y), Vector2(rootNode._get_timeline_position_from_song_position(wholeBeatTime + (rootNode.secondsPerWholeBeat/2)),rootNode.get_rect().size.y-(tickHeight/2)), tickColor, tickWidth, true)
-		if rootNode.roundedTicks:
-			draw_circle(Vector2(rootNode._get_timeline_position_from_song_position(wholeBeatTime + (rootNode.secondsPerWholeBeat/2)),rootNode.get_rect().size.y-(tickHeight/2)), tickWidth/2, tickColor, true, -1.0, true)
+		draw_circle(Vector2(rootNode._get_timeline_position_from_song_position(BeatTime),rootNode.get_rect().size.y-tickHeight), tickWidth/2, tickColor, true, -1.0, true)
 
 func _draw() -> void:
 	for wholeBeatTime in rootNode.wholeBeatTimes:
 		_draw_beat_ticks(wholeBeatTime, rootNode.tickHeight, rootNode.tickWidth, rootNode.tickColor, rootNode.roundedTicks)
+	if rootNode.snapDivisor == 2:
+		for halfBeatTime in rootNode.halfBeatTimes:
+			_draw_beat_ticks(halfBeatTime, rootNode.tickHeight/2, rootNode.tickWidth, rootNode.tickColor, rootNode.roundedTicks)
 
 ## Refreshes beat ticks
 func _refresh_ticks():
