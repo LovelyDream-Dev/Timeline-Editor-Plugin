@@ -1,23 +1,39 @@
-[gd_scene load_steps=2 format=3 uid="uid://bybn6e8ggh00o"]
+[gd_scene load_steps=4 format=3 uid="uid://bybn6e8ggh00o"]
 
 [ext_resource type="Script" uid="uid://dq28igni4l6u0" path="res://addons/timeline_editor/Scenes/timeline_gui/time_line_gui.gd" id="1_8w6sv"]
+[ext_resource type="Texture2D" uid="uid://cyfil8yg51hra" path="res://icon.svg" id="2_acgc7"]
+[ext_resource type="Script" uid="uid://7w8grgon3jya" path="res://addons/timeline_editor/Scenes/timeline_gui/beat_ticks.gd" id="3_o30xk"]
 
 [node name="TimelineGUI" type="Control"]
-clip_contents = true
+z_index = 1
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_8w6sv")
+songLengthInSeconds = 180.0
+bpm = 120.0
+tickHeight = 20.0
+tickWidth = 1.0
+tickColor = Color(1, 1, 1, 1)
+roundedTicks = true
+snapDivisor = 2
 
 [node name="ScrollContainer" type="ScrollContainer" parent="."]
+z_as_relative = false
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
 
-[node name="Control" type="Control" parent="ScrollContainer"]
+[node name="BaseControl" type="ColorRect" parent="ScrollContainer"]
+z_as_relative = false
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
+color = Color(1, 0, 1, 1)
 
-[node name="ColorRect" type="ColorRect" parent="ScrollContainer/Control"]
-custom_minimum_size = Vector2(50, 50)
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="Sprite2D" type="Sprite2D" parent="ScrollContainer/BaseControl"]
+texture = ExtResource("2_acgc7")
+
+[node name="BeatTicks" type="Node2D" parent="ScrollContainer/BaseControl" node_paths=PackedStringArray("rootNode")]
+script = ExtResource("3_o30xk")
+rootNode = NodePath("../../..")
+debug = true
+
+[node name="Camera2D" type="Camera2D" parent="."]
