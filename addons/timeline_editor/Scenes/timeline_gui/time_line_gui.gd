@@ -1,3 +1,4 @@
+@tool
 class_name TimelineGUI
 extends Control
 
@@ -18,8 +19,7 @@ var baseControl:Control
 ## If the tick ends are rounded
 @export var roundedTicks:bool
 ## Determines the amount of ticks between each whole beat.
-@export_range(1,16) var snapDivisor:int = 1
-
+@export_range(1,16) var snapDivisor:int 
 # Arrays
 ## Array of the times in seconds of all whole beats within the song
 var wholeBeatTimes:Array = []
@@ -29,6 +29,14 @@ var wholeBeatTimesGenerated:bool
 var halfBeatTimes:Array = []
 ## Tracks if half beat times have already been generated
 var halfBeatTimesGenerated:bool
+## Array of the times in seconds of all quarter beats within the song
+var quarterBeatTimes:Array = []
+## Tracks if quarter beat times have already been generated
+var quarterBeatTimesGenerated:bool
+## Array of the times in seconds of all eighth beats within the song
+var eighthBeatTimes:Array = []
+## Tracks if eighth beat times have already been generated
+var eighthBeatTimesGenerated:bool
 
 # Values
 ## Length of the timeline in pixels
@@ -55,6 +63,7 @@ func _process(delta: float) -> void:
 	totalWholeBeats = wholeBeatsPerSecond * songLengthInSeconds
 	_get_whole_beat_times()
 	_get_half_beat_times()
+	_get_quarter_beat_times()
 
 func _get_timeline_length_from_song_length() -> float: 
 	return songLengthInSeconds * bpm
@@ -75,14 +84,21 @@ func _get_whole_beat_times():
 		for beatNumber in range(totalWholeBeats):
 			var beatTime = beatNumber/wholeBeatsPerSecond
 			wholeBeatTimes.append(beatTime)
-			wholeBeatTimesGenerated = true
+		wholeBeatTimesGenerated = true
 
 func _get_half_beat_times():
 	if !halfBeatTimesGenerated and wholeBeatsPerSecond:
 		for beatNumber in range(totalWholeBeats*2):
 			var beatTime = (beatNumber*.5)/wholeBeatsPerSecond
 			halfBeatTimes.append(beatTime)
-			halfBeatTimesGenerated = true
+		halfBeatTimesGenerated = true
+
+func _get_quarter_beat_times():
+	if !quarterBeatTimesGenerated and wholeBeatsPerSecond:
+		for beatNumber in range(totalWholeBeats*4):
+			var beatTime = beatNumber/(wholeBeatsPerSecond*4)
+			quarterBeatTimes.append(beatTime)
+		quarterBeatTimesGenerated = true
 
 ## Returns true if the necessary values to draw ticks are ready.
 func _get_if_ticks_are_drawable() -> bool:

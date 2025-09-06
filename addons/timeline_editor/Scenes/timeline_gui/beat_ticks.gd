@@ -1,10 +1,14 @@
+@tool
 extends Node2D
 
-@export var rootNode:TimelineGUI
+var rootNode:TimelineGUI
 ## When enabled, "ui_accept" will refresh ticks 
 @export var debug:bool 
 
 var initialTicksDrawn:bool
+
+func _ready() -> void:
+	rootNode = get_parent().get_parent().get_parent()
 
 func _input(_event: InputEvent) -> void:
 	if debug:
@@ -27,6 +31,10 @@ func _draw() -> void:
 	if rootNode.snapDivisor == 2:
 		for halfBeatTime in rootNode.halfBeatTimes:
 			_draw_beat_ticks(halfBeatTime, rootNode.tickHeight/2, rootNode.tickWidth, rootNode.tickColor, rootNode.roundedTicks)
+	elif rootNode.snapDivisor == 4:
+		for quarterBeatTime in rootNode.quarterBeatTimes:
+			_draw_beat_ticks(quarterBeatTime, (rootNode.tickHeight/2), rootNode.tickWidth, rootNode.tickColor, rootNode.roundedTicks)
+			
 
 ## Refreshes beat ticks
 func _refresh_ticks():
