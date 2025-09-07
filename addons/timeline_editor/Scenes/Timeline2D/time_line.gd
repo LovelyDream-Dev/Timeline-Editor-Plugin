@@ -1,25 +1,55 @@
 @tool
-class_name TimelineGUI
+class_name Timeline
 extends Control
 
 # Nodes
 var scrollContainer:ScrollContainer
-var baseControl:Control
+var baseControl:ColorRect
 
-## If applicable, the length of the song in seconds used to calculate [member timelineLengthInPixels].
-@export var songLengthInSeconds:float
+@export_category("Colors")
+## The color of the timeline background
+@export var backgroundColor:Color
+## The color of whole beat ticks
+@export var wholeBeatTickColor:Color
+## The color of half beat ticks
+@export var halfBeatTickColor:Color
+## The color of quarter beat ticks
+@export var quarterBeatTickColor:Color
+
+@export_category("Values")
+## Height of the timeline
+@export var timelineHeight:float = 100.0
 ## Beats Per Minute/Tempo of the song. It is required to calculate [member timelineLengthInPixels].
 @export var bpm:float
+## If applicable, the length of the song in seconds used to calculate [member timelineLengthInPixels].
+@export var songLengthInSeconds:float
 ## The height of the beat ticks
 @export var tickHeight:float
 ## The width of the beat ticks
 @export var tickWidth:float
-## The color of the beat ticks
-@export var tickColor:Color
-## If the tick ends are rounded
-@export var roundedTicks:bool
 ## Determines the amount of ticks between each whole beat.
-@export_range(1,16) var snapDivisor:int 
+@export_range(1,16) var snapDivisor:int
+## How many pixels represent one second on the timeline, directly affects timeline length and spacing between ticks
+@export var pixelsPerSecond:float = 250
+
+@export_category("Booleans")
+## If the tick ends are rounded
+@export var roundedTicks:bool = true
+## If it is set to true, placement on the timeline via mouse clicks will be enabled
+@export var timelinePlacement:bool = true
+## If it is set to true, snapping will be enabled for timeline placement
+@export var snapping:bool = true
+
+@export_category("Strings") 
+## String name of your Left Mouse Button input action. Required for timeline placement
+@export var LMB_ActionName:String
+## String name of your Right Mouse Button input action. Required for timeline placement
+@export var RMB_ActionName:String
+
+@export_category("Textures")
+## Texture of the note that will be placed on the timeline
+@export var noteTexture:Texture
+
 # Arrays
 ## Array of the times in seconds of all whole beats within the song
 var wholeBeatTimes:Array = []
@@ -39,6 +69,8 @@ var eighthBeatTimes:Array = []
 var eighthBeatTimesGenerated:bool
 
 # Values
+## How many pixels are in a beat on the timeline
+var pixelsPerBeat:float
 ## Length of the timeline in pixels
 var timelineLengthInPixels:float
 ## If applicable, the current position of the song.
@@ -51,33 +83,38 @@ var secondsPerWholeBeat:float
 var wholeBeatsPerSecond:float
 
 
+
 func _ready() -> void:
 	scrollContainer = $ScrollContainer
 	baseControl = $ScrollContainer/BaseControl
 	_init_timeline()
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	baseControl.custom_minimum_size.x = _get_timeline_length_from_song_length()
-	wholeBeatsPerSecond = bpm/60
-	secondsPerWholeBeat = 60/bpm
+	baseControl.color = backgroundColor
+	wholeBeatsPerSecond = (bpm/60)
+	secondsPerWholeBeat = (60/bpm)
 	totalWholeBeats = wholeBeatsPerSecond * songLengthInSeconds
 	_get_whole_beat_times()
 	_get_half_beat_times()
 	_get_quarter_beat_times()
+	
+	if wholeBeatTimesGenerated:
+		pixelsPerBeat = _get_timeline_length_from_song_length()/len(wholeBeatTimes)
 
 func _get_timeline_length_from_song_length() -> float: 
-	return songLengthInSeconds * bpm
+	return songLengthInSeconds * pixelsPerSecond
 
 ## Uses [method valueInSeconds] to find the related pixel position on the timeline. [br]Returns [code]0.0[/code] if [method valueInSeconds] is greater than [method songLengthInSeconds].
 func _get_timeline_position_from_song_position(valueinSeconds:float) -> float:
 	if valueinSeconds <= songLengthInSeconds:
-		return valueinSeconds * bpm
+		return valueinSeconds * pixelsPerSecond
 	else: 
 		return 0.0
 	
 func _init_timeline():
-	self.size = Vector2(get_viewport_rect().size.x, 50)
-	scrollContainer.size = Vector2(get_viewport_rect().size.x, 50)
+	self.size = Vector2(get_viewport_rect().size.x, timelineHeight)
+	scrollContainer.size = Vector2(get_viewport_rect().size.x, timelineHeight)
 
 func _get_whole_beat_times():
 	if !wholeBeatTimesGenerated and wholeBeatsPerSecond:
