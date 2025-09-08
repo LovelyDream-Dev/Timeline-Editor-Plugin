@@ -30,14 +30,14 @@ func _process(_delta: float) -> void:
 	mousePosition = get_global_mouse_position()
 	mouseTimelinePosition = rootNode.get_local_mouse_position().x
 	mouseBeatPosition = (mouseTimelinePosition / rootNode.bpm) 
-	_get_snapped_position()
+	if rootNode.snapping:
+		_get_snapped_position()
 
 ## Assigns the closest snap position to [member snappedPosition] based on the mouse position on the timeline.
 func _get_snapped_position():
-	if rootNode.snapping:
-		var snapInterval = 1.0/float(rootNode.snapDivisor)
-		snappedBeat = round(mouseBeatPosition / snapInterval) * snapInterval
-		snappedPixel = snappedBeat * rootNode.pixelsPerBeat
+	var snapInterval = 1.0/float(rootNode.snapDivisor)
+	snappedBeat = round(mouseBeatPosition / snapInterval) * snapInterval
+	snappedPixel = snappedBeat * rootNode.pixelsPerBeat
 
 ## Returns the x position of the mouse on the timeline if the mouse is on the timeline
 func _get_mouse_position_on_timeline(): 
@@ -45,18 +45,28 @@ func _get_mouse_position_on_timeline():
 		mouseTimelinePosition = to_local(mousePosition).x
 
 func _place_note():
-	var songPosition = snappedBeat * rootNode.secondsPerWholeBeat
+	var snappedSongPosition = snappedBeat * rootNode.secondsPerWholeBeat
 	var noteSprite = Sprite2D.new()
 	noteSprite.scale = Vector2(.25,.25)
 	noteSprite.texture = rootNode.noteTexture
-	noteSprite.position.x = snappedPixel
 	noteSprite.position.y = rootNode.get_rect().size.y/2
-	noteSprite.set_meta("xPosition", snappedPixel)
-	noteSprite.set_meta("beatPosition", snappedBeat)
-	noteSprite.set_meta("songPosition", songPosition)
-	if songPosition not in $NoteContainer.noteTimes:
-		$NoteContainer.add_child(noteSprite)
-		$NoteContainer.noteTimes[songPosition] = true
+	if rootNode.snapping:
+		noteSprite.position.x = snappedPixel
+		noteSprite.set_meta("xPosition", snappedPixel)
+		noteSprite.set_meta("beatPosition", snappedBeat)
+		noteSprite.set_meta("songPosition", snappedSongPosition)
+		if snappedSongPosition not in $NoteContainer.noteTimes:
+			$NoteContainer.add_child(noteSprite)
+			$NoteContainer.noteTimes[snappedSongPosition] = true
+	else:
+		var unsnappedSongPosition: = (mouseTimelinePosition / rootNode.pixelsPerBeat) * rootNode.secondsPerWholeBeat
+		noteSprite.position.x = mouseTimelinePosition
+		noteSprite.set_meta("xPosition", mouseTimelinePosition)
+		noteSprite.set_meta("beatPosition", mouseTimelinePosition / rootNode.pixelsPerBeat)
+		noteSprite.set_meta("songPosition", unsnappedSongPosition)
+		if unsnappedSongPosition not in $NoteContainer.noteTimes:
+			$NoteContainer.add_child(noteSprite)
+			$NoteContainer.noteTimes[unsnappedSongPosition] = true
 
 func _remove_note():
 	if $NoteContainer.get_child_count() > 0:
