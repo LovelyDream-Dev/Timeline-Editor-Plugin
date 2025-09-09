@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://dq28igni4l6u0" path="res://addons/timeline_editor/Scenes/Timeline2D/time_line.gd" id="1_vkty0"]
 [ext_resource type="Script" uid="uid://7w8grgon3jya" path="res://addons/timeline_editor/Scenes/Timeline2D/beat_ticks.gd" id="2_1xed5"]
 [ext_resource type="Texture2D" uid="uid://cyfil8yg51hra" path="res://icon.svg" id="2_gk61m"]
-[ext_resource type="Script" uid="uid://bronxf6tcmje" path="res://addons/timeline_editor/Scenes/Timeline2D/placement_component.gd" id="3_n5tg8"]
+[ext_resource type="Script" uid="uid://bronxf6tcmje" path="res://addons/timeline_editor/Scenes/Timeline2D/mouse_component.gd" id="3_n5tg8"]
 [ext_resource type="Script" uid="uid://capyobm72pptj" path="res://addons/timeline_editor/Scenes/Timeline2D/note_container.gd" id="5_rnvyw"]
 
 [node name="Timeline2D" type="Control"]
@@ -11,7 +11,7 @@ z_index = 1
 custom_minimum_size = Vector2(50, 100)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 50.0
+offset_right = 1356.0
 offset_bottom = 100.0
 script = ExtResource("1_vkty0")
 backgroundColor = Color(0.0313726, 0.141176, 0.215686, 1)
@@ -31,7 +31,7 @@ noteTexture = ExtResource("2_gk61m")
 z_as_relative = false
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 0
-offset_right = 2.0
+offset_right = 1356.0
 offset_bottom = 100.0
 
 [node name="BaseControl" type="ColorRect" parent="ScrollContainer"]
