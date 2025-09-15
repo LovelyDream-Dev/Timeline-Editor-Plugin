@@ -39,8 +39,7 @@ func _process(_delta: float) -> void:
 		# __ NEEDS DEBUGGING __
 		mouseTimelinePosition = rootNode.get_local_mouse_position().x + scrollContainer.scroll_horizontal
 	mouseBeatPosition = (mouseTimelinePosition / rootNode.bpm) 
-	if rootNode.snapping:
-		_get_snapped_position()
+	_get_snapped_position()
 	_dragging()
 
 ## Assigns the closest snap position to [member snappedPosition] based on the mouse position on the timeline.
@@ -60,19 +59,11 @@ func _place_note():
 	noteSprite.scale = Vector2(.25,.25)
 	noteSprite.texture = rootNode.noteTexture
 	noteSprite.position.y = rootNode.get_rect().size.y/2
-	if rootNode.snapping:
-		noteSprite.position.x = snappedPixel
-		noteSprite.set_meta("songPosition", snappedSongPosition)
-		if snappedSongPosition not in $NoteContainer.noteTimes.values():
-			$NoteContainer.add_child(noteSprite)
-			$NoteContainer.noteTimes[$NoteContainer.get_child_count() - 1] = snappedSongPosition
-	else:
-		var unsnappedSongPosition: = (mouseTimelinePosition / rootNode.pixelsPerBeat) * rootNode.secondsPerWholeBeat
-		noteSprite.position.x = mouseTimelinePosition
-		noteSprite.set_meta("songPosition", unsnappedSongPosition)
-		if unsnappedSongPosition not in $NoteContainer.noteTimes.values():
-			$NoteContainer.add_child(noteSprite)
-			$NoteContainer.noteTimes[$NoteContainer.get_child_count() - 1] = unsnappedSongPosition
+	noteSprite.position.x = snappedPixel
+	noteSprite.set_meta("songPosition", snappedSongPosition)
+	if snappedSongPosition not in $NoteContainer.noteTimes.values():
+		$NoteContainer.add_child(noteSprite)
+		$NoteContainer.noteTimes[$NoteContainer.get_child_count() - 1] = snappedSongPosition
 
 func _remove_note():
 	if $NoteContainer.get_child_count() > 0:
@@ -94,14 +85,8 @@ func _select_note():
 
 func _dragging():
 	if currentNote:
-		if rootNode.snapping:
-			var snappedSongPosition = snappedBeat * rootNode.secondsPerWholeBeat
-			currentNote.position.x = snappedPixel
-			currentNote.set_meta("songPosition", snappedSongPosition)
-			$NoteContainer.noteTimes[currentNote.get_index()] = snappedSongPosition
-		else:
-			var unsnappedSongPosition: = (mouseTimelinePosition / rootNode.pixelsPerBeat) * rootNode.secondsPerWholeBeat
-			currentNote.position.x = mouseTimelinePosition
-			currentNote.set_meta("songPosition", unsnappedSongPosition)
-			$NoteContainer.noteTimes[currentNote.get_index()] = unsnappedSongPosition
+		var snappedSongPosition = snappedBeat * rootNode.secondsPerWholeBeat
+		currentNote.position.x = snappedPixel
+		currentNote.set_meta("songPosition", snappedSongPosition)
+		$NoteContainer.noteTimes[currentNote.get_index()] = snappedSongPosition
 			

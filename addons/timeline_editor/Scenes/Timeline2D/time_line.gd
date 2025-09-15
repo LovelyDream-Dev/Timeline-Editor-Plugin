@@ -37,8 +37,6 @@ var baseControl:ColorRect
 @export var roundedTicks:bool = true
 ## If it is set to true, placement on the timeline via mouse clicks will be enabled
 @export var timelinePlacement:bool = true
-## If it is set to true, snapping will be enabled for timeline placement
-@export var snapping:bool = true
 
 @export_category("Strings") 
 ## String name of your Left Mouse Button input action. Required for timeline placement
