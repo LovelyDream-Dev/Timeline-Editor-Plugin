@@ -67,8 +67,6 @@ var eighthBeatTimes:Array = []
 var eighthBeatTimesGenerated:bool
 
 # Values
-## How many pixels are in a beat on the timeline
-var pixelsPerBeat:float
 ## Length of the timeline in pixels
 var timelineLengthInPixels:float
 ## If applicable, the current position of the song.
@@ -79,7 +77,8 @@ var totalWholeBeats:int
 var secondsPerWholeBeat:float
 ## How many whole beats are in a second
 var wholeBeatsPerSecond:float
-
+## How many pixels are in a whole beat on the timeline
+var pixelsPerWholeBeat 
 
 
 func _ready() -> void:
@@ -92,13 +91,11 @@ func _process(_delta: float) -> void:
 	baseControl.color = backgroundColor
 	wholeBeatsPerSecond = (bpm/60)
 	secondsPerWholeBeat = (60/bpm)
+	pixelsPerWholeBeat = secondsPerWholeBeat * pixelsPerSecond
 	totalWholeBeats = wholeBeatsPerSecond * songLengthInSeconds
 	_get_whole_beat_times()
 	_get_half_beat_times()
 	_get_quarter_beat_times()
-	
-	if wholeBeatTimesGenerated:
-		pixelsPerBeat = _get_timeline_length_from_song_length()/len(wholeBeatTimes)
 
 func _get_timeline_length_from_song_length() -> float: 
 	return songLengthInSeconds * pixelsPerSecond
