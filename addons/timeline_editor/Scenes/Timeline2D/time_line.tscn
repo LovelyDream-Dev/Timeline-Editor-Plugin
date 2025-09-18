@@ -54,3 +54,7 @@ debug = true
 
 [node name="Camera2D" type="Camera2D" parent="."]
 enabled = false
+
+[node name="Icon" type="Sprite2D" parent="."]
+position = Vector2(-257, 248)
+texture = ExtResource("2_gk61m")

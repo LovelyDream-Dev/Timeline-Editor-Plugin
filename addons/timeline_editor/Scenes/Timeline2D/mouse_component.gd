@@ -64,7 +64,6 @@ func _place_note():
 		noteSprite.position.y = rootNode.get_rect().size.y/2
 		noteSprite.position.x = snappedPixel
 		noteSprite.set_meta("songPosition", snappedSongPosition)
-		noteSprite.set_meta("selected", false)
 		if snappedSongPosition not in noteDataDictionary.values() and NoteData:
 			noteContainer.add_child(noteSprite)
 			noteDataDictionary[noteSprite.get_index()] = snappedSongPosition
@@ -75,9 +74,8 @@ func _remove_note():
 			for noteSprite:Sprite2D in noteContainer.get_children():
 				if noteSprite.get_rect().has_point(noteSprite.to_local(get_global_mouse_position())):
 					noteContainer.remove_child(noteSprite)
-					# __ NEEDS DEBUGGING __
 					_refresh_note_dictionary()
-# __ NEEDS DEBUGGING __
+					
 func _refresh_note_dictionary():
 	if !Engine.is_editor_hint():
 		noteDataDictionary.clear()
@@ -89,12 +87,16 @@ func _refresh_note_dictionary():
 func _select_notes():
 	if !Engine.is_editor_hint():
 		if noteContainer.get_child_count() > 0:
-			for note:Sprite2D in noteContainer.get_children():
-				if note.get_rect().has_point(note.to_local(get_global_mouse_position())) and rootNode.LMB_ActionName:
-					if Input.is_action_pressed(rootNode.LMB_ActionName):
-						if note.get_meta("selected") == false:
-							note.set_meta("selected", true)
-						else: note.set_meta("selected", false)
+			for noteSprite:Sprite2D in noteContainer.get_children():
+				if noteSprite.get_rect().has_point(noteSprite.to_local(get_global_mouse_position())) and rootNode.LMB_ActionName and Input.is_action_just_pressed(rootNode.LMB_ActionName):
+					if noteSprite.is_in_group("selectedNotes"):
+						noteSprite.modulate.b = 0
+						noteSprite.set_meta("selected", true)
+						noteSprite.remove_from_group("selectedNotes")
+					else: 
+						noteSprite.add_to_group("selectedNotes")
+						noteSprite.modulate.b = 1
+						noteSprite.set_meta("selected", false)
 
 func _dragging():
 	if !Engine.is_editor_hint():
