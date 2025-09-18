@@ -4,8 +4,8 @@ extends EditorPlugin
 
 func _enter_tree() -> void:
 	# Initialization of the plugin goes here.
-	#add_autoload_singleton("NoteData", "res://addons/timeline_editor/Singletons/note_data.gd")
-	#call_deferred("_init_note_data")
+	add_autoload_singleton("NoteData", "res://addons/timeline_editor/Singletons/note_data.gd")
+	call_deferred("_init_note_data")
 	pass
 
 func _init_note_data():

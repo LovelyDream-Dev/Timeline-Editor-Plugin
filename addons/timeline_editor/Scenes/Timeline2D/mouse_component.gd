@@ -46,7 +46,7 @@ func _process(_delta: float) -> void:
 		print(noteDataDictionary)
 		mouseBeatPosition = (mouseTimelinePosition / rootNode.pixelsPerWholeBeat) 
 		_get_snapped_position()
-		_dragging()
+		#_dragging()
 
 ## Assigns the closest snap position to [member snappedPosition] based on the mouse position on the timeline.
 func _get_snapped_position():
@@ -67,27 +67,23 @@ func _place_note():
 		noteSprite.set_meta("selected", false)
 		if snappedSongPosition not in noteDataDictionary.values() and NoteData:
 			noteContainer.add_child(noteSprite)
-			noteSprite.set_meta("noteNumber", noteSprite.get_index())
-			# __ NEEDS DEBUGGING __
-			_refresh_note_dictionary()
-			#noteDataDictionary[noteContainer.get_child_count() - 1] = snappedSongPosition
+			noteDataDictionary[noteSprite.get_index()] = snappedSongPosition
 
 func _remove_note():
 	if !Engine.is_editor_hint():
 		if noteContainer.get_child_count() > 0:
-			for note:Sprite2D in noteContainer.get_children():
-				if note.get_rect().has_point(note.to_local(get_global_mouse_position())):
-					#noteDataDictionary.erase(note.get_index())
+			for noteSprite:Sprite2D in noteContainer.get_children():
+				if noteSprite.get_rect().has_point(noteSprite.to_local(get_global_mouse_position())):
+					noteContainer.remove_child(noteSprite)
 					# __ NEEDS DEBUGGING __
 					_refresh_note_dictionary()
-					note.queue_free()
 # __ NEEDS DEBUGGING __
 func _refresh_note_dictionary():
 	if !Engine.is_editor_hint():
 		noteDataDictionary.clear()
 		if noteContainer and noteContainer.get_child_count() > 0:
 			for noteSprite:Sprite2D in noteContainer.get_children():
-				noteDataDictionary[noteSprite.get_meta("noteNumber")] = noteSprite.get_meta("songPosition")
+				noteDataDictionary[noteSprite.get_index()] = noteSprite.get_meta("songPosition")
 				
 
 func _select_notes():
