@@ -53,7 +53,6 @@ func _process(_delta: float) -> void:
 	mouseBeatPosition = (mouseTimelinePosition / rootNode.pixelsPerWholeBeat) 
 	_get_snapped_position()
 	_dragging()
-	print(noteDataArray)
 
 func _place_note():
 	var noteSprite = Timeline_Note.new()
@@ -86,8 +85,6 @@ func _dragging():
 				noteDataArray.append(note)
 				noteDataArray.sort_custom(func(a, b): return a["songPosition"] < b["songPosition"])
 				_set_note_values(noteSprite, true)
-				print(noteSprite.note)
-				print(noteSprite.timelinePosition)
 
 ## Sets all appropriate values of the given [member notesprite]. If [member isDragging] is true, only the values necessary when dragging will be set.
 func _set_note_values(noteSprite:Timeline_Note, isDragging:bool):

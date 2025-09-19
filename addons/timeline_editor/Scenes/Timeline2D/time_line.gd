@@ -5,8 +5,8 @@ extends Control
 signal SNAP_DIVISOR_CHANGED
 
 # Nodes
-var scrollContainer:ScrollContainer
-var baseControl:ColorRect
+@onready var scrollContainer:ScrollContainer = $ScrollContainer
+@onready var baseControl:ColorRect = $ScrollContainer/BaseControl
 
 @export_category("Colors")
 ## The color of the timeline background
@@ -17,6 +17,10 @@ var baseControl:ColorRect
 @export var halfBeatTickColor:Color
 ## The color of quarter beat ticks
 @export var quarterBeatTickColor:Color
+## The color of eighth beat ticks
+@export var eighthBeatTickColor:Color
+## The color of sixteenth beat ticks
+@export var sixteenthBeatTickColor:Color
 
 @export_category("Values")
 ## Height of the timeline
@@ -42,6 +46,8 @@ var baseControl:ColorRect
 @export var roundedTicks:bool = true
 ## If it is set to true, placement on the timeline via mouse clicks will be enabled
 @export var timelinePlacement:bool = true
+## If it is set to true, the scroll bar will be hidden
+@export var hideScrollBar:bool
 
 @export_category("Strings") 
 ## String name of your Left Mouse Button input action. Required for timeline placement
@@ -70,6 +76,10 @@ var quarterBeatTimesGenerated:bool
 var eighthBeatTimes:Array = []
 ## Tracks if eighth beat times have already been generated
 var eighthBeatTimesGenerated:bool
+## Array of the times in seconds of all sixteenth beats within the song
+var sixteenthBeatTimes:Array = []
+## Tracks if sixteenth beat times have already been generated
+var sixteenthBeatTimesGenerated:bool
 
 # Values
 ## Length of the timeline in pixels
@@ -89,12 +99,19 @@ func _on_snap_divisor_changed(newValue):
 	SNAP_DIVISOR_CHANGED.emit()
 
 func _ready() -> void:
-	scrollContainer = $ScrollContainer
-	baseControl = $ScrollContainer/BaseControl
 	_init_timeline_size()
 
 func _process(_delta: float) -> void:
+	# Stops this function from running in the editor
+	if Engine.is_editor_hint():
+		return
+
 	_set_timeline_height()
+	if hideScrollBar and scrollContainer.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_SHOW_NEVER:
+		scrollContainer.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	elif !hideScrollBar and scrollContainer.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_SHOW_NEVER:
+		scrollContainer.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
+		
 	baseControl.custom_minimum_size.x = _get_timeline_length_from_song_length()
 	baseControl.color = backgroundColor
 	wholeBeatsPerSecond = (bpm/60)
@@ -104,6 +121,8 @@ func _process(_delta: float) -> void:
 	_get_whole_beat_times()
 	_get_half_beat_times()
 	_get_quarter_beat_times()
+	_get_eighth_beat_times()
+	_get_sixteenth_beat_times()
 
 func _get_timeline_length_from_song_length() -> float: 
 	return songLengthInSeconds * pixelsPerSecond
@@ -133,24 +152,43 @@ func _set_timeline_height():
 
 func _get_whole_beat_times():
 	if !wholeBeatTimesGenerated and wholeBeatsPerSecond:
-		for beatNumber in range(totalWholeBeats):
-			var beatTime = beatNumber/wholeBeatsPerSecond
+		wholeBeatTimes.clear()
+		for beatIndex in range(totalWholeBeats):
+			var beatTime = float(beatIndex)/wholeBeatsPerSecond
 			wholeBeatTimes.append(beatTime)
 		wholeBeatTimesGenerated = true
 
 func _get_half_beat_times():
 	if !halfBeatTimesGenerated and wholeBeatsPerSecond:
-		for beatNumber in range(totalWholeBeats*2):
-			var beatTime = (beatNumber*.5)/wholeBeatsPerSecond
+		halfBeatTimes.clear()
+		for beatIndex in range(totalWholeBeats*2):
+			var beatTime = float(beatIndex*.5)/wholeBeatsPerSecond
 			halfBeatTimes.append(beatTime)
 		halfBeatTimesGenerated = true
 
 func _get_quarter_beat_times():
 	if !quarterBeatTimesGenerated and wholeBeatsPerSecond:
-		for beatNumber in range(totalWholeBeats*4):
-			var beatTime = beatNumber/(wholeBeatsPerSecond*4)
+		quarterBeatTimes.clear()
+		for beatIndex in range(totalWholeBeats*4):
+			var beatTime = float(beatIndex)/(wholeBeatsPerSecond*4)
 			quarterBeatTimes.append(beatTime)
 		quarterBeatTimesGenerated = true
+
+func _get_eighth_beat_times():
+	if !eighthBeatTimesGenerated and wholeBeatsPerSecond:
+		eighthBeatTimes.clear()
+		for beatIndex in range(totalWholeBeats*8):
+			var beatTime = float(beatIndex)/(wholeBeatsPerSecond*8)
+			eighthBeatTimes.append(beatTime)
+		eighthBeatTimesGenerated = true
+
+func _get_sixteenth_beat_times():
+	if !sixteenthBeatTimesGenerated and wholeBeatsPerSecond:
+		sixteenthBeatTimes.clear()
+		for beatIndex in range(totalWholeBeats*16):
+			var beatTime = float(beatIndex)/(wholeBeatsPerSecond*16)
+			sixteenthBeatTimes.append(beatTime)
+		sixteenthBeatTimesGenerated = true
 
 ## Returns true if the necessary values to draw ticks are ready.
 func _get_if_ticks_are_drawable() -> bool:

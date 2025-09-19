@@ -11,28 +11,32 @@ z_index = 1
 custom_minimum_size = Vector2(50, 100)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 1356.0
+offset_right = 50.0
 offset_bottom = 100.0
 script = ExtResource("1_vkty0")
 backgroundColor = Color(0.0313726, 0.141176, 0.215686, 1)
 wholeBeatTickColor = Color(1, 1, 1, 1)
 halfBeatTickColor = Color(0.713726, 0, 0, 1)
-quarterBeatTickColor = Color(0.776471, 0.670588, 0.25098, 1)
+quarterBeatTickColor = Color(0.2509804, 0.4509804, 0.7764706, 1)
+eighthBeatTickColor = Color(0.7764706, 0.67058825, 0.2509804, 1)
+sixteenthBeatTickColor = Color(0.4862745, 0.1764706, 0.7607843, 1)
 bpm = 120.0
 songLengthInSeconds = 180.0
-tickHeight = 50.0
-tickWidth = 5.0
-snapDivisor = 2
+tickHeight = 80.0
+tickWidth = 2.0
+snapDivisor = 16
+hideScrollBar = true
 LMB_ActionName = "LMB"
 RMB_ActionName = "RMB"
 noteTexture = ExtResource("2_gk61m")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="."]
 z_as_relative = false
-custom_minimum_size = Vector2(1356, 100)
+custom_minimum_size = Vector2(50, 100)
 layout_mode = 0
 offset_right = 1356.0
 offset_bottom = 100.0
+horizontal_scroll_mode = 2
 script = ExtResource("3_rnvyw")
 
 [node name="BaseControl" type="ColorRect" parent="ScrollContainer"]
