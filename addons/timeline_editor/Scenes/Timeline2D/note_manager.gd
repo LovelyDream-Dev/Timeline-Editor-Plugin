@@ -33,10 +33,19 @@ func _input(event: InputEvent) -> void:
 	if scrollContainer.get_rect().has_point(get_global_mouse_position()):
 		if event is InputEventMouseMotion:
 			mouseTimelinePosition = scrollContainer.make_input_local(event).position.x + scrollContainer.scroll_horizontal
+
+		# Clicks
 		if Input.is_action_just_pressed(rootNode.LMB_ActionName):
 			if rootNode.noteTexture and note not in noteDataArray: _place_note()
 		if Input.is_action_just_pressed(rootNode.RMB_ActionName):
 				_remove_note()
+
+		# Holds
+		if Input.is_action_pressed(rootNode.LMB_ActionName):
+			_select_notes(false)
+			_dragging()
+		if Input.is_action_just_released(rootNode.LMB_ActionName):
+			_select_notes(true)
 
 func _enter_tree() -> void:
 	if Engine.has_singleton("NoteData"):
@@ -52,7 +61,6 @@ func _process(_delta: float) -> void:
 	note = {"songPosition":snappedSongPosition}
 	mouseBeatPosition = (mouseTimelinePosition / rootNode.pixelsPerWholeBeat) 
 	_get_snapped_position()
-	_dragging()
 
 func _place_note():
 	var noteSprite = Timeline_Note.new()
@@ -76,6 +84,23 @@ func _get_snapped_position():
 	snappedBeat = round(mouseBeatPosition / snapInterval) * snapInterval
 	snappedPixel = snappedBeat * rootNode.pixelsPerWholeBeat
 	snappedSongPosition = snappedBeat * rootNode.secondsPerWholeBeat
+
+func _select_notes(isDeselect:bool):
+	var leftMax = scrollContainer.scroll_horizontal
+	var rightMax = leftMax + scrollContainer.get_rect().size.x
+	for i in range(noteContainer.get_child_count() - 1, -1, -1):
+		var noteSprite:Timeline_Note = noteContainer.get_child(i)
+		if noteSprite.position.x < leftMax or noteSprite.position.x > rightMax:
+			continue
+		if noteSprite.get_rect().has_point(noteSprite.to_local(get_global_mouse_position())):
+			if !isDeselect:
+				if !noteSprite.selected:
+					noteSprite.selected = true
+					break
+			if noteSprite.selected:
+				noteSprite.selected = false
+				break
+
 
 func _dragging():
 	if noteContainer.get_child_count() > 0:

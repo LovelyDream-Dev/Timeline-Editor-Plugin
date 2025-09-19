@@ -7,16 +7,6 @@ var timelinePosition:float
 var spawnBufferExpired:bool
 var note:Dictionary 
 
-func _input(event: InputEvent) -> void:
-	if self.get_rect().has_point(self.to_local(get_global_mouse_position())):
-		if event is InputEventMouseButton:
-			if event.pressed:
-				if event.button_index == MOUSE_BUTTON_LEFT:
-					if !selected:
-						selected = true
-					else:
-						selected = false
-
 func _process(_delta: float) -> void:
 	if !spawnBufferExpired:
 		pass

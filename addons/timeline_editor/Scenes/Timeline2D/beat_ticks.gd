@@ -57,7 +57,6 @@ func _get_if_tick_time_overlaps(tickTime:float, tickType:int):
 	elif tickType == 16: # sixteenth ticks
 		if tickTime in rootNode.eighthBeatTimes:
 			return true
-		
 
 func _draw() -> void:
 	# Draw whole ticks (always drawn)
