@@ -5,6 +5,7 @@ var selected:bool = false
 var songPosition:float
 var timelinePosition:float
 var spawnBufferExpired:bool
+var note:Dictionary 
 
 func _input(event: InputEvent) -> void:
 	if self.get_rect().has_point(self.to_local(get_global_mouse_position())):

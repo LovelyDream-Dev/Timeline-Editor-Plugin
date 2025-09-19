@@ -19,6 +19,11 @@ var isDragging:bool
 var noteDataArray:Array
 ## The song position that is used as a snap point that the mouse is closest to
 var snappedSongPosition:float
+## The dictionary data of the current note to be added to noteDataArray
+var note:Dictionary
+## The snap interval to determine beat ticks and snapping
+var snapInterval:float
+
 func _ready() -> void:
 	rootNode = get_parent().get_parent().get_parent()
 	scrollContainer = get_parent().get_parent()
@@ -26,12 +31,11 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if scrollContainer.get_rect().has_point(get_global_mouse_position()):
-		mouseTimelinePosition = scrollContainer.make_input_local(event).position.x + scrollContainer.scroll_horizontal
-		if rootNode.LMB_ActionName:
-			if Input.is_action_just_pressed(rootNode.LMB_ActionName):
-				if rootNode.noteTexture: _place_note()
-		if rootNode.RMB_ActionName:
-			if Input.is_action_just_pressed(rootNode.RMB_ActionName):
+		if event is InputEventMouseMotion:
+			mouseTimelinePosition = scrollContainer.make_input_local(event).position.x + scrollContainer.scroll_horizontal
+		if Input.is_action_just_pressed(rootNode.LMB_ActionName):
+			if rootNode.noteTexture and note not in noteDataArray: _place_note()
+		if Input.is_action_just_pressed(rootNode.RMB_ActionName):
 				_remove_note()
 
 func _enter_tree() -> void:
@@ -45,20 +49,15 @@ func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 
+	note = {"songPosition":snappedSongPosition}
 	mouseBeatPosition = (mouseTimelinePosition / rootNode.pixelsPerWholeBeat) 
 	_get_snapped_position()
 	_dragging()
-	#print(noteDataArray)
+	print(noteDataArray)
 
 func _place_note():
 	var noteSprite = Timeline_Note.new()
-	noteSprite.scale = Vector2(.25,.25)
-	noteSprite.texture = rootNode.noteTexture
-	noteSprite.position.y = rootNode.get_rect().size.y/2
-	noteSprite.position.x = snappedPixel
-	noteSprite.timelinePosition = snappedPixel
-	noteSprite.set_script(load("res://addons/timeline_editor/Scripts/timeline_note.gd"))
-	var note = {"songPosition":snappedSongPosition}
+	_set_note_values(noteSprite, false)
 	if note not in noteDataArray and NoteData:
 		noteContainer.add_child(noteSprite)
 		noteDataArray.append(note)
@@ -69,12 +68,12 @@ func _remove_note():
 		for noteSprite:Timeline_Note in noteContainer.get_children():
 			if noteSprite.get_rect().has_point(noteSprite.to_local(get_global_mouse_position())):
 				noteContainer.remove_child(noteSprite)
-				noteDataArray.erase({"songPosition":snappedSongPosition})
+				noteDataArray.erase(noteSprite.note)
 				noteDataArray.sort_custom(func(a, b): return a["songPosition"] < b["songPosition"])
 
 ## Assigns the closest snap position to [member snappedPosition] based on the mouse position on the timeline.
 func _get_snapped_position():
-	var snapInterval = 1.0/float(rootNode.snapDivisor)
+	snapInterval = 1.0/float(rootNode.snapDivisor)
 	snappedBeat = round(mouseBeatPosition / snapInterval) * snapInterval
 	snappedPixel = snappedBeat * rootNode.pixelsPerWholeBeat
 	snappedSongPosition = snappedBeat * rootNode.secondsPerWholeBeat
@@ -82,7 +81,26 @@ func _get_snapped_position():
 func _dragging():
 	if noteContainer.get_child_count() > 0:
 		for noteSprite:Timeline_Note in get_tree().get_nodes_in_group("selectedNotes"):
-			noteSprite.position.x += (snappedPixel - noteSprite.position.x)
-			noteSprite.timelinePosition = snappedPixel - noteSprite.position.x
-			noteDataArray.erase({"songPosition":noteSprite.songPosition})
-			noteDataArray.sort_custom(func(a, b): return a["songPosition"] < b["songPosition"])
+			if noteSprite.note != note: 
+				noteDataArray.erase(noteSprite.note)
+				noteDataArray.append(note)
+				noteDataArray.sort_custom(func(a, b): return a["songPosition"] < b["songPosition"])
+				_set_note_values(noteSprite, true)
+				print(noteSprite.note)
+				print(noteSprite.timelinePosition)
+
+## Sets all appropriate values of the given [member notesprite]. If [member isDragging] is true, only the values necessary when dragging will be set.
+func _set_note_values(noteSprite:Timeline_Note, isDragging:bool):
+	if !isDragging:
+		noteSprite.scale = Vector2(.25,.25)
+		noteSprite.texture = rootNode.noteTexture
+		noteSprite.position.y = rootNode.get_rect().size.y/2
+		noteSprite.position.x = snappedPixel
+		noteSprite.timelinePosition = snappedPixel
+		noteSprite.songPosition = (round(noteSprite.timelinePosition / snapInterval) * snapInterval) * rootNode.secondsPerWholeBeat
+		noteSprite.note = note
+	else:
+		noteSprite.position.x += (snappedPixel - noteSprite.position.x)
+		noteSprite.timelinePosition = snappedPixel
+		noteSprite.songPosition = (round(noteSprite.timelinePosition / snapInterval) * snapInterval) * rootNode.secondsPerWholeBeat
+		noteSprite.note = note
