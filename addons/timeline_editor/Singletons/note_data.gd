@@ -1,3 +1,3 @@
 extends Node
 
-var noteData:Dictionary = {}
+var noteData:Array = []

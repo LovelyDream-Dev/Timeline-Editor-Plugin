@@ -4,15 +4,15 @@
 [ext_resource type="Script" uid="uid://7w8grgon3jya" path="res://addons/timeline_editor/Scenes/Timeline2D/beat_ticks.gd" id="2_1xed5"]
 [ext_resource type="Texture2D" uid="uid://cyfil8yg51hra" path="res://icon.svg" id="2_gk61m"]
 [ext_resource type="Script" uid="uid://bronxf6tcmje" path="res://addons/timeline_editor/Scenes/Timeline2D/mouse_component.gd" id="3_n5tg8"]
-[ext_resource type="Script" uid="uid://capyobm72pptj" path="res://addons/timeline_editor/Scenes/Timeline2D/note_container.gd" id="5_rnvyw"]
+[ext_resource type="Script" uid="uid://cw4ldwcrwobik" path="res://addons/timeline_editor/Scenes/Timeline2D/scroll_container.gd" id="3_rnvyw"]
 
 [node name="Timeline2D" type="Control"]
 z_index = 1
 custom_minimum_size = Vector2(50, 100)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 50.0
-offset_bottom = 100.0
+offset_right = 1356.0
+offset_bottom = 50.0
 script = ExtResource("1_vkty0")
 backgroundColor = Color(0.0313726, 0.141176, 0.215686, 1)
 wholeBeatTickColor = Color(1, 1, 1, 1)
@@ -31,12 +31,13 @@ noteTexture = ExtResource("2_gk61m")
 z_as_relative = false
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 0
-offset_right = 2.0
-offset_bottom = 100.0
+offset_right = 1356.0
+offset_bottom = 50.0
+script = ExtResource("3_rnvyw")
 
 [node name="BaseControl" type="ColorRect" parent="ScrollContainer"]
 z_as_relative = false
-custom_minimum_size = Vector2(45000, 100)
+custom_minimum_size = Vector2(1356, 100)
 layout_mode = 2
 color = Color(0.0313726, 0.141176, 0.215686, 1)
 
@@ -46,15 +47,11 @@ z_as_relative = false
 script = ExtResource("3_n5tg8")
 
 [node name="NoteContainer" type="Node2D" parent="ScrollContainer/BaseControl/MouseComponentent"]
-script = ExtResource("5_rnvyw")
 
 [node name="BeatTicks" type="Node2D" parent="ScrollContainer/BaseControl"]
 script = ExtResource("2_1xed5")
-debug = true
 
 [node name="Camera2D" type="Camera2D" parent="."]
 enabled = false
 
-[node name="Icon" type="Sprite2D" parent="."]
-position = Vector2(-257, 248)
-texture = ExtResource("2_gk61m")
+[connection signal="SNAP_DIVISOR_CHANGED" from="." to="ScrollContainer/BaseControl/BeatTicks" method="_on_timeline_2d_snap_divisor_changed"]

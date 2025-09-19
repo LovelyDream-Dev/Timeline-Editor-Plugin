@@ -1,19 +1,12 @@
-@tool
+@tool 
 extends Node2D
 
 var rootNode:Timeline
-## When enabled, "ui_accept" will refresh ticks 
-@export var debug:bool 
 
 var initialTicksDrawn:bool
 
 func _ready() -> void:
 	rootNode = get_parent().get_parent().get_parent()
-
-func _input(_event: InputEvent) -> void:
-	if debug:
-		if Input.is_action_just_pressed("ui_accept") and rootNode._get_if_ticks_are_drawable():
-			_refresh_ticks()
 
 func _process(delta: float) -> void:
 	if !initialTicksDrawn and rootNode._get_if_ticks_are_drawable():
@@ -36,22 +29,31 @@ func _get_if_tick_time_overlaps(tickTime:float, tickType:int):
 			return true
 
 func _draw() -> void:
-	for wholeBeatTime in rootNode.wholeBeatTimes: # Draw whole ticks (always drawn)
+	# Draw whole ticks (always drawn)
+	for wholeBeatTime in rootNode.wholeBeatTimes: 
 		_draw_beat_ticks(wholeBeatTime, rootNode.tickHeight, rootNode.tickWidth, rootNode.wholeBeatTickColor, rootNode.roundedTicks)
-	
-	if rootNode.snapDivisor == 2: # Draw half ticks
+
+	# Draw half ticks
+	if rootNode.snapDivisor == 2: 
 		for halfBeatTime in rootNode.halfBeatTimes:
 			if !_get_if_tick_time_overlaps(halfBeatTime, 2):
 				_draw_beat_ticks(halfBeatTime, rootNode.tickHeight/2, rootNode.tickWidth, rootNode.halfBeatTickColor, rootNode.roundedTicks)
 
-	elif rootNode.snapDivisor == 4: # Draw quarter ticks and subsequent ticks
-		for quarterBeatTime in rootNode.quarterBeatTimes: # Quarter
+	# Draw quarter ticks and subsequent ticks
+	elif rootNode.snapDivisor == 4: 
+		# Quarter
+		for quarterBeatTime in rootNode.quarterBeatTimes: 
 			if !_get_if_tick_time_overlaps(quarterBeatTime, 4):
 				_draw_beat_ticks(quarterBeatTime, rootNode.tickHeight/2.5, rootNode.tickWidth, rootNode.quarterBeatTickColor, rootNode.roundedTicks)
-		for halfBeatTime in rootNode.halfBeatTimes: # Half
+		# Half
+		for halfBeatTime in rootNode.halfBeatTimes: 
 			if !_get_if_tick_time_overlaps(halfBeatTime, 2):
 				_draw_beat_ticks(halfBeatTime, rootNode.tickHeight/2, rootNode.tickWidth, rootNode.halfBeatTickColor, rootNode.roundedTicks)
 
 ## Refreshes beat ticks
 func _refresh_ticks():
 	queue_redraw()
+
+
+func _on_timeline_2d_snap_divisor_changed() -> void:
+	_refresh_ticks()

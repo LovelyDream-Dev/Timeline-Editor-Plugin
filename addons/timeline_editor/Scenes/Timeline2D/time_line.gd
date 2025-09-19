@@ -2,6 +2,8 @@
 class_name Timeline
 extends Control
 
+signal SNAP_DIVISOR_CHANGED
+
 # Nodes
 var scrollContainer:ScrollContainer
 var baseControl:ColorRect
@@ -28,7 +30,10 @@ var baseControl:ColorRect
 ## The width of the beat ticks
 @export var tickWidth:float
 ## Determines the amount of ticks between each whole beat.
-@export_range(1,16) var snapDivisor:int
+@export_range(1,16) var snapDivisor:int:
+	set(value):
+		snapDivisor = value
+		_on_snap_divisor_changed(value)
 ## How many pixels represent one second on the timeline, directly affects timeline length and spacing between ticks
 @export var pixelsPerSecond:float = 250
 
@@ -80,13 +85,16 @@ var wholeBeatsPerSecond:float
 ## How many pixels are in a whole beat on the timeline
 var pixelsPerWholeBeat 
 
+func _on_snap_divisor_changed(newValue):
+	SNAP_DIVISOR_CHANGED.emit()
 
 func _ready() -> void:
 	scrollContainer = $ScrollContainer
 	baseControl = $ScrollContainer/BaseControl
-	_init_timeline()
+	_init_timeline_size()
 
 func _process(_delta: float) -> void:
+	_set_timeline_height()
 	baseControl.custom_minimum_size.x = _get_timeline_length_from_song_length()
 	baseControl.color = backgroundColor
 	wholeBeatsPerSecond = (bpm/60)
@@ -107,9 +115,21 @@ func _get_timeline_position_from_song_position(valueinSeconds:float) -> float:
 	else: 
 		return 0.0
 	
-func _init_timeline():
+func _init_timeline_size():
 	self.size = Vector2(get_viewport_rect().size.x, timelineHeight)
 	scrollContainer.size = Vector2(get_viewport_rect().size.x, timelineHeight)
+	baseControl.size = Vector2(get_viewport_rect().size.x, timelineHeight)
+
+func _set_timeline_height():
+	if self.size.y != timelineHeight: 
+		self.custom_minimum_size.y = timelineHeight
+		self.size.y = timelineHeight
+	if scrollContainer.size.y != timelineHeight: 
+		scrollContainer.size.y = timelineHeight
+		scrollContainer.size.y = timelineHeight
+	if baseControl.size.y != timelineHeight:
+		baseControl.custom_minimum_size.y = timelineHeight
+		baseControl.size.y = timelineHeight
 
 func _get_whole_beat_times():
 	if !wholeBeatTimesGenerated and wholeBeatsPerSecond:
