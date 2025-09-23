@@ -15,10 +15,6 @@ run/main_scene="uid://bybn6e8ggh00o"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
 
-[autoload]
-
-NoteData="*res://addons/timeline_editor/Singletons/note_data.gd"
-
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/timeline_editor/plugin.cfg")

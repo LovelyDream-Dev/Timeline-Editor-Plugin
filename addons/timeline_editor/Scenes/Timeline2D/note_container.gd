@@ -1,10 +1,13 @@
 extends Node2D
+class_name Note_Container
 
+## The array of note times
+var noteDataArray:Array
+
+# The root node of the scene
 var rootNode:Timeline
 # The scroll container
 var scrollContainer:ScrollContainer
-# The note container node
-var noteContainer:Node2D
 # The local position of the mouse in pixels on the timeline
 var mouseTimelinePosition:float
 # The position of the mouse in beats on the timeline
@@ -13,8 +16,6 @@ var mouseBeatPosition:float
 var snappedBeat:float
 # The nearest snap point in pixels
 var snappedPixel:float
-## The array of note times stored in a singleton
-var noteDataArray:Array
 ## The song position that is used as a snap point that the mouse is closest to
 var snappedSongPosition:float
 ## The dictionary data of the current note to be added to noteDataArray
@@ -31,7 +32,6 @@ var currentNote:Timeline_Note = null
 func _ready() -> void:
 	rootNode = get_parent().get_parent().get_parent()
 	scrollContainer = get_parent().get_parent()
-	noteContainer = $NoteContainer
 
 func _input(event: InputEvent) -> void:
 	if scrollContainer.get_rect().has_point(get_global_mouse_position()):
@@ -51,20 +51,14 @@ func _input(event: InputEvent) -> void:
 			isDragging = false
 			currentNote = null
 
-func _enter_tree() -> void:
-	if Engine.has_singleton("NoteData"):
-		var note_data = Engine.get_singleton("NoteData")
-		if note_data and note_data.has("noteData"):
-			noteDataArray = note_data.noteData
-
 func _process(_delta: float) -> void:
 	# Stops this function from processing in the editor
 	if Engine.is_editor_hint():
 		return
 
+	_update_z_indexes()
 	_select_notes()
 	_dragging()
-	print(isDragging)
 	note = {"songPosition":snappedSongPosition}
 	mouseBeatPosition = (mouseTimelinePosition / rootNode.pixelsPerWholeBeat) 
 	_get_snapped_position()
@@ -72,16 +66,16 @@ func _process(_delta: float) -> void:
 func _place_note():
 	var noteSprite = Timeline_Note.new()
 	_set_note_values(noteSprite)
-	if note not in noteDataArray and NoteData:
-		noteContainer.add_child(noteSprite)
+	if note not in noteDataArray:
+		self.add_child(noteSprite)
 		noteDataArray.append(note)
 		noteDataArray.sort_custom(func(a, b): return a["songPosition"] < b["songPosition"])
 
 func _remove_note():
-	if noteContainer.get_child_count() > 0:
-		for noteSprite:Timeline_Note in noteContainer.get_children():
+	if self.get_child_count() > 0:
+		for noteSprite:Timeline_Note in self.get_children():
 			if noteSprite.get_rect().has_point(noteSprite.to_local(get_global_mouse_position())):
-				noteContainer.remove_child(noteSprite)
+				self.remove_child(noteSprite)
 				noteDataArray.erase(noteSprite.note)
 				noteDataArray.sort_custom(func(a, b): return a["songPosition"] < b["songPosition"])
 
@@ -92,6 +86,15 @@ func _get_snapped_position():
 	snappedPixel = snappedBeat * rootNode.pixelsPerWholeBeat
 	snappedSongPosition = snappedBeat * rootNode.secondsPerWholeBeat
 
+func _update_z_indexes():
+	if self.get_child_count() > 0:
+		var firstNoteSprite:Timeline_Note = self.get_children()[0]
+		for noteSprite:Timeline_Note in self.get_children():
+			var previousNoteSprite:Timeline_Note = self.get_children()[noteSprite.get_index()-1]
+			if noteSprite.songPosition >= previousNoteSprite.songPosition:
+				noteSprite.z_index = previousNoteSprite.z_index + 1
+			
+
 func _select_notes():
 	# Stops this function from running if a note is already selected and being dragged
 	if isDragging:
@@ -99,10 +102,12 @@ func _select_notes():
 
 	var leftMax = scrollContainer.scroll_horizontal
 	var rightMax = leftMax + scrollContainer.get_rect().size.x
-	for i in range(noteContainer.get_child_count() - 1, -1, -1):
-		var noteSprite:Timeline_Note = noteContainer.get_child(i)
+	
+	for i in range(len(self.get_children())):
+		var noteSprite:Timeline_Note = self.get_child(i)
 		if noteSprite.position.x < leftMax or noteSprite.position.x > rightMax:
 			continue
+
 		if noteSprite.get_rect().has_point(noteSprite.to_local(get_global_mouse_position())):
 			if LMB_Pressed:
 				if !noteSprite.selected:
@@ -126,15 +131,17 @@ func _dragging():
 				noteDataArray.erase(noteSprite.note)
 				noteDataArray.append(note)
 				noteDataArray.sort_custom(func(a, b): return a["songPosition"] < b["songPosition"])
+				noteSprite.position.x += (snappedPixel - noteSprite.position.x)
+				noteSprite.timelinePosition = snappedPixel
+				noteSprite.songPosition = (round(noteSprite.timelinePosition / snapInterval) * snapInterval) * rootNode.secondsPerWholeBeat
+				noteSprite.note = note
+
 				# Adjust y position of overlapped notes for visual clarity
 				if noteDataArray.count(note) > 1:
 					noteSprite.position.y -= noteDataArray.count(note)*3
 				else:
 					noteSprite.position.y = yCenter
-				noteSprite.position.x += (snappedPixel - noteSprite.position.x)
-				noteSprite.timelinePosition = snappedPixel
-				noteSprite.songPosition = (round(noteSprite.timelinePosition / snapInterval) * snapInterval) * rootNode.secondsPerWholeBeat
-				noteSprite.note = note
+
 
 ## Sets all appropriate values of the given [member notesprite]. 
 func _set_note_values(noteSprite:Timeline_Note):

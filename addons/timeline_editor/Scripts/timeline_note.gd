@@ -6,6 +6,8 @@ var songPosition:float
 var timelinePosition:float
 var spawnBufferExpired:bool
 var note:Dictionary 
+var parent:Node2D
+var isDragging:bool
 
 func _process(_delta: float) -> void:
 	if !spawnBufferExpired:
@@ -19,12 +21,18 @@ func _process(_delta: float) -> void:
 			self.remove_from_group("selectedNotes")
 
 func _enter_tree() -> void:
+	parent = get_parent()
+	parent.noteDataArray.append(note)
 	var spawnBuffer = Timer.new()
 	spawnBuffer.autostart = true
 	spawnBuffer.one_shot = true
 	get_tree().root.add_child(spawnBuffer)
 	spawnBuffer.start(0.2)
 	spawnBuffer.connect("timeout", _on_spawn_buffer_timeout)
+
+func _refresh_note_array():
+	if note != parent.note:
+		pass
 
 func _on_spawn_buffer_timeout():
 	spawnBufferExpired = true
