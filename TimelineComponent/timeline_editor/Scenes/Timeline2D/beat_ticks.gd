@@ -1,4 +1,3 @@
-@tool 
 extends Node2D
 
 var rootNode:Timeline
@@ -13,7 +12,7 @@ func _ready() -> void:
 	rootNode = get_parent().get_parent().get_parent()
 	scrollContainer = get_parent().get_parent()
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 
@@ -39,7 +38,7 @@ func _draw_beat_ticks(BeatTime:float, tickHeight:float, tickWidth:float, tickCol
 		return
 
 	draw_line(Vector2(xPosition, yCenter + (tickHeight/2)), Vector2(xPosition, yCenter - (tickHeight/2)), tickColor, tickWidth, true)
-	if rootNode.roundedTicks:
+	if rounded:
 		draw_circle(Vector2(xPosition, yCenter + (tickHeight/2)), tickWidth/2, tickColor, true, -1.0, true)
 		draw_circle(Vector2(xPosition, yCenter - (tickHeight/2)), tickWidth/2, tickColor, true, -1.0, true)
 

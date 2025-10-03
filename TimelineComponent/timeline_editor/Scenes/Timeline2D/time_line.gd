@@ -1,4 +1,3 @@
-@tool
 class_name Timeline
 extends Control
 
@@ -26,7 +25,10 @@ signal SNAP_DIVISOR_CHANGED
 ## Height of the timeline
 @export var timelineHeight:float = 100.0
 ## Beats Per Minute/Tempo of the song. It is required to calculate [member timelineLengthInPixels].
-@export var bpm:float
+@export var bpm:float:
+	set(value):
+		bpm = value
+		on_bpm_changed(value)
 ## If applicable, the length of the song in seconds used to calculate [member timelineLengthInPixels].
 @export var songLengthInSeconds:float
 ## The height of the beat ticks
@@ -37,7 +39,7 @@ signal SNAP_DIVISOR_CHANGED
 @export_range(1,16) var snapDivisor:int:
 	set(value):
 		snapDivisor = value
-		_on_snap_divisor_changed(value)
+		_on_snap_divisor_changed()
 ## How many pixels represent one second on the timeline, directly affects timeline length and spacing between ticks
 @export var pixelsPerSecond:float = 250
 
@@ -51,15 +53,15 @@ signal SNAP_DIVISOR_CHANGED
 
 @export_category("Strings") 
 ## String name of your Left Mouse Button input action. Required for timeline placement
-@export var LMB_ActionName:String
+@export var lmbActionName:String
 ## String name of your Right Mouse Button input action. Required for timeline placement
-@export var RMB_ActionName:String
+@export var rmbActionName:String
 
 @export_category("Textures")
 ## Texture of the note that will be placed on the timeline
 @export var noteTexture:Texture
 
-# Arrays
+# --- ARRAYS ---
 ## Array of the times in seconds of all whole beats within the song
 var wholeBeatTimes:Array = []
 ## Tracks if whole beat times have already been generated
@@ -81,7 +83,7 @@ var sixteenthBeatTimes:Array = []
 ## Tracks if sixteenth beat times have already been generated
 var sixteenthBeatTimesGenerated:bool
 
-# Values
+# --- VALUES ---
 ## Length of the timeline in pixels
 var timelineLengthInPixels:float
 ## If applicable, the current position of the song.
@@ -95,17 +97,48 @@ var wholeBeatsPerSecond:float
 ## How many pixels are in a whole beat on the timeline
 var pixelsPerWholeBeat 
 
-func _on_snap_divisor_changed(newValue):
+# --- SNAPPING VARIABLES ---
+# The position of the mouse in beats on the timeline
+var mouseBeatPosition:float
+## The nearest beat snap, this number DOES NOT indicate overral beat numbers. It counts beats sequentially depending on the snap divisor. [br]For example, with half beats it will count the first whole beat as 0, and the half beat after as 1.
+var snappedBeat:float
+# The nearest snap point in pixels
+var snappedPixel:float
+## The song position that is used as a snap point that the mouse is closest to
+var snappedSongPosition:float
+## The snap interval to determine beat ticks and snapping
+var snapInterval:float
+
+# The local position of the mouse in pixels on the timeline
+var mouseTimelinePosition:float
+
+func _on_snap_divisor_changed():
 	SNAP_DIVISOR_CHANGED.emit()
 
 func _ready() -> void:
+	wholeBeatsPerSecond = (bpm/60)
+	secondsPerWholeBeat = (60/bpm)
+	pixelsPerWholeBeat = secondsPerWholeBeat * pixelsPerSecond
+	totalWholeBeats = floori(wholeBeatsPerSecond * songLengthInSeconds)
+	place_timeline_note(1)
+	place_timeline_note(2)
+	place_timeline_note(3)
+	place_timeline_note(4)
 	_init_timeline_size()
+
+func _input(event: InputEvent) -> void:
+		# Get the timeline mouse position if the mouse is moving within the timeline
+	if scrollContainer.get_rect().has_point(get_global_mouse_position()):
+		if event is InputEventMouseMotion:
+			mouseTimelinePosition = scrollContainer.make_input_local(event).position.x + scrollContainer.scroll_horizontal
 
 func _process(_delta: float) -> void:
 	# Stops this function from running in the editor
 	if Engine.is_editor_hint():
 		return
 
+	mouseBeatPosition = (mouseTimelinePosition / pixelsPerWholeBeat) 
+	get_snapped_position()
 	_set_timeline_height()
 	if hideScrollBar and scrollContainer.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_SHOW_NEVER:
 		scrollContainer.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
@@ -114,15 +147,45 @@ func _process(_delta: float) -> void:
 		
 	baseControl.custom_minimum_size.x = _get_timeline_length_from_song_length()
 	baseControl.color = backgroundColor
-	wholeBeatsPerSecond = (bpm/60)
-	secondsPerWholeBeat = (60/bpm)
-	pixelsPerWholeBeat = secondsPerWholeBeat * pixelsPerSecond
-	totalWholeBeats = wholeBeatsPerSecond * songLengthInSeconds
+	
 	_get_whole_beat_times()
 	_get_half_beat_times()
 	_get_quarter_beat_times()
 	_get_eighth_beat_times()
 	_get_sixteenth_beat_times()
+
+# --- CUSTOM FUNCTIONS ---
+
+func on_bpm_changed(value):
+	wholeBeatsPerSecond = value/60
+	secondsPerWholeBeat = 60/value
+	pixelsPerWholeBeat = secondsPerWholeBeat * pixelsPerSecond
+	totalWholeBeats = floori(wholeBeatsPerSecond * songLengthInSeconds)
+
+func select_and_drag_notes(selectedNotes:Array):
+	if Input.is_action_pressed(lmbActionName):
+		for note:Sprite2D in selectedNotes:
+			note.position.x += (mouseBeatPosition - snappedBeat)
+
+func get_timeline_position_from_beat(beat:float) -> Vector2:
+	var posx = beat * pixelsPerWholeBeat
+	var posy = self.get_rect().size.y/2
+	return Vector2(posx, posy)
+
+func place_timeline_note(beat:float):
+	var pos = get_timeline_position_from_beat(beat)
+	var hitNoteSprite:Sprite2D = Sprite2D.new()
+	hitNoteSprite.position = pos
+	hitNoteSprite.texture = load("res://icon.svg")
+	hitNoteSprite.scale = Vector2(0.5, 0.5)
+	self.add_child(hitNoteSprite)
+
+## Assigns the closest snap position to [member snappedPosition] based on the mouse position on the timeline.
+func get_snapped_position():
+	snapInterval = 1.0/float(snapDivisor)
+	snappedBeat = round(mouseBeatPosition / snapInterval) * snapInterval
+	snappedPixel = snappedBeat * pixelsPerWholeBeat
+	snappedSongPosition = snappedBeat * secondsPerWholeBeat
 
 func _get_timeline_length_from_song_length() -> float: 
 	return songLengthInSeconds * pixelsPerSecond
