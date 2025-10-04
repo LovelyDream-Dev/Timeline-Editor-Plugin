@@ -1,12 +1,13 @@
 [gd_scene load_steps=5 format=3 uid="uid://bybn6e8ggh00o"]
 
-[ext_resource type="Script" uid="uid://dq28igni4l6u0" path="res://TimelineComponent/timeline_editor/Scenes/Timeline2D/time_line.gd" id="1_vkty0"]
-[ext_resource type="Script" uid="uid://7w8grgon3jya" path="res://TimelineComponent/timeline_editor/Scenes/Timeline2D/beat_ticks.gd" id="2_1xed5"]
+[ext_resource type="Script" uid="uid://dq28igni4l6u0" path="res://TimelineComponent/Scenes/Timeline/time_line.gd" id="1_vkty0"]
+[ext_resource type="Script" uid="uid://7w8grgon3jya" path="res://TimelineComponent/Scenes/Timeline/beat_ticks.gd" id="2_1xed5"]
 [ext_resource type="Texture2D" uid="uid://cyfil8yg51hra" path="res://icon.svg" id="2_gk61m"]
-[ext_resource type="Script" uid="uid://cw4ldwcrwobik" path="res://TimelineComponent/timeline_editor/Scenes/Timeline2D/scroll_container.gd" id="3_rnvyw"]
+[ext_resource type="Script" uid="uid://cw4ldwcrwobik" path="res://TimelineComponent/Scenes/Timeline/scroll_container.gd" id="3_rnvyw"]
 
 [node name="Timeline2D" type="Control"]
-z_index = 1
+z_index = 3
+z_as_relative = false
 custom_minimum_size = Vector2(50, 100)
 layout_mode = 3
 anchors_preset = 0
@@ -31,6 +32,7 @@ noteTexture = ExtResource("2_gk61m")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="."]
 z_as_relative = false
+clip_contents = false
 custom_minimum_size = Vector2(50, 100)
 layout_mode = 0
 offset_right = 1356.0
@@ -42,6 +44,7 @@ script = ExtResource("3_rnvyw")
 z_as_relative = false
 custom_minimum_size = Vector2(45000, 100)
 layout_mode = 2
+mouse_filter = 2
 color = Color(0.0313726, 0.141176, 0.215686, 1)
 
 [node name="NoteContainer" type="Node2D" parent="ScrollContainer/BaseControl"]
@@ -49,6 +52,7 @@ z_index = 2
 z_as_relative = false
 
 [node name="BeatTicks" type="Node2D" parent="ScrollContainer/BaseControl"]
+z_index = 1
 script = ExtResource("2_1xed5")
 
 [node name="Camera2D" type="Camera2D" parent="."]

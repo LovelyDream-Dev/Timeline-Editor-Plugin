@@ -1,11 +1,12 @@
-class_name Timeline
 extends Control
+class_name Timeline
 
 signal SNAP_DIVISOR_CHANGED
 
 # Nodes
 @onready var scrollContainer:ScrollContainer = $ScrollContainer
 @onready var baseControl:ColorRect = $ScrollContainer/BaseControl
+@onready var noteContainer:Node2D = $ScrollContainer/BaseControl/NoteContainer
 
 @export_category("Colors")
 ## The color of the timeline background
@@ -112,6 +113,14 @@ var snapInterval:float
 # The local position of the mouse in pixels on the timeline
 var mouseTimelinePosition:float
 
+# --- DRAGGING VARIABLES ---
+
+var dragSelectStartPosition:Vector2
+var dragSelectStarted:bool = false
+var dragSelectionRect:Rect2
+var dragNoteStartPosX:float
+
+
 func _on_snap_divisor_changed():
 	SNAP_DIVISOR_CHANGED.emit()
 
@@ -127,12 +136,41 @@ func _ready() -> void:
 	_init_timeline_size()
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			select_notes_by_click(event)
+			if get_if_clicked_outside_of_selected_note() == true:
+				deselect_notes(null)
+
+	if Input.is_action_just_pressed(lmbActionName):
+		start_note_drag()
+
+	if Input.is_action_pressed(lmbActionName):
+		drag_notes()
+		if get_tree().get_node_count_in_group("selectedNotes") == 0:
+			if !dragSelectStarted:
+				dragSelectStarted = true
+				dragSelectStartPosition = event.position
+		else:
+			if dragSelectStarted:
+				deselect_notes(null)
+
+	if Input.is_action_just_released(lmbActionName):
+		end_note_drag()
+		dragSelectStarted = false
+
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_ESCAPE:
+			deselect_notes(null)
+
 		# Get the timeline mouse position if the mouse is moving within the timeline
-	if scrollContainer.get_rect().has_point(get_global_mouse_position()):
+	if scrollContainer.get_rect().has_point(scrollContainer.get_local_mouse_position()):
 		if event is InputEventMouseMotion:
 			mouseTimelinePosition = scrollContainer.make_input_local(event).position.x + scrollContainer.scroll_horizontal
 
 func _process(_delta: float) -> void:
+	queue_redraw()
+	select_notes_by_drag()
 	# Stops this function from running in the editor
 	if Engine.is_editor_hint():
 		return
@@ -154,6 +192,11 @@ func _process(_delta: float) -> void:
 	_get_eighth_beat_times()
 	_get_sixteenth_beat_times()
 
+func _draw() -> void:
+	if dragSelectStarted:
+		draw_selection_rectangle(dragSelectStartPosition)
+
+
 # --- CUSTOM FUNCTIONS ---
 
 func on_bpm_changed(value):
@@ -162,10 +205,107 @@ func on_bpm_changed(value):
 	pixelsPerWholeBeat = secondsPerWholeBeat * pixelsPerSecond
 	totalWholeBeats = floori(wholeBeatsPerSecond * songLengthInSeconds)
 
-func select_and_drag_notes(selectedNotes:Array):
-	if Input.is_action_pressed(lmbActionName):
-		for note:Sprite2D in selectedNotes:
-			note.position.x += (mouseBeatPosition - snappedBeat)
+
+# ----- DRAWING FUNCTIONS -----
+
+
+func draw_selection_rectangle(pos:Vector2):
+	var mousePos = get_local_mouse_position()
+	var topLeft = Vector2(min(pos.x, mousePos.x), min(pos.y, mousePos.y))
+	var movingCorner = Vector2(abs(mousePos.x - pos.x), abs(mousePos.y - pos.y))
+	dragSelectionRect = Rect2(topLeft, movingCorner)
+	draw_rect(dragSelectionRect, Color(1, 1, 1, 0.5), true)
+	draw_rect(dragSelectionRect, Color(1, 1, 1, 1), false)
+
+
+# ----- TIMELINE _NOTE FUNCTIONS -----
+
+
+func shift_overlapping_notes():
+	var sharedPositions:Dictionary = {}
+
+	for timelineNote:TimelineNote in noteContainer.get_children():
+		var posX = timelineNote.currentPositionX
+		if not sharedPositions.has(posX):
+			sharedPositions[posX] = []
+		sharedPositions[posX].append(timelineNote)
+
+	for posX in sharedPositions.keys():
+		var group = sharedPositions[posX]
+		if group.size() > 1:
+			for i in range(group.size()):
+				group[i].position.y -= i*5
+
+## Selects timeline notes on mouse click. Can only select individual notes if none are already selected.
+func select_notes_by_click(event:InputEvent):
+	if get_tree().get_node_count_in_group("selectedNotes") > 0:
+		return
+
+	var nodesUnderEvent:Array = get_timeline_note_from_list_at_point(event.position, noteContainer.get_children())
+	if !nodesUnderEvent.is_empty():
+		var topNote:TimelineNote = nodesUnderEvent.back()
+		topNote.isSelected = true
+
+func select_notes_by_drag():
+	if !dragSelectStarted:
+		if get_tree().get_node_count_in_group("selectedNotes") > 0:
+			return
+	else:
+		for timelineNote:TimelineNote in noteContainer.get_children():
+			if dragSelectionRect.has_point(noteContainer.to_local(timelineNote.global_position)):
+				timelineNote.isSelected = true
+
+## De-selects [member note] if it is not [code]null[/code]. Otherwise it de-selects all notes in group [member selectedNotes].
+func deselect_notes(note:TimelineNote):
+	if note == null:
+		for timelineNote:TimelineNote in get_tree().get_nodes_in_group("selectedNotes"):
+			timelineNote.isSelected = false
+	else:
+		note.isSelected = false
+
+## Returns [member true] if a mouse click is detected outside of any node within group [member selectedNotes].
+func get_if_clicked_outside_of_selected_note() -> bool:
+	for timelineNote:TimelineNote in get_tree().get_nodes_in_group("selectedNotes"):
+		if !timelineNote.hitNoteSprite.get_rect().has_point(timelineNote.hitNoteSprite.get_local_mouse_position()):
+			return true
+		else: 
+			return false
+	return true
+
+func start_note_drag():
+	dragNoteStartPosX = snappedPixel
+
+func drag_notes():
+	if !dragSelectStarted:
+		shift_overlapping_notes()
+		for timelineNote:TimelineNote in get_tree().get_nodes_in_group("selectedNotes"):
+			var dragDistance = (snappedPixel - dragNoteStartPosX)
+			timelineNote.position.x = timelineNote.currentPositionX + dragDistance
+			
+
+func end_note_drag():
+	for timelineNote:TimelineNote in get_tree().get_nodes_in_group("selectedNotes"):
+		timelineNote.currentPositionX = timelineNote.position.x
+	dragNoteStartPosX = 0.0
+
+## Returns an [member Array] of all [member Node2D]'s within [member list] that are located at [member point].
+func get_timeline_note_from_list_at_point(point:Vector2, list:Array) -> Array:
+	var pointArray:Array 
+	for timelineNote:TimelineNote in list:
+		if timelineNote.hitNoteSprite.get_rect().has_point(timelineNote.to_local(point)):
+			pointArray.append(timelineNote)
+	return pointArray
+
+## Returns the [member Node2D] with the highest [member z-index] from [member list].
+func get_highest_timeline_note_z_index(list:Array) -> Node2D:
+	if list.is_empty():
+		return null
+
+	var highest:TimelineNote = list[0]
+	for timelineNote:TimelineNote in list:
+		if timelineNote.z_index > highest.z_index:
+				highest = timelineNote
+	return highest
 
 func get_timeline_position_from_beat(beat:float) -> Vector2:
 	var posx = beat * pixelsPerWholeBeat
@@ -174,11 +314,15 @@ func get_timeline_position_from_beat(beat:float) -> Vector2:
 
 func place_timeline_note(beat:float):
 	var pos = get_timeline_position_from_beat(beat)
-	var hitNoteSprite:Sprite2D = Sprite2D.new()
-	hitNoteSprite.position = pos
-	hitNoteSprite.texture = load("res://icon.svg")
-	hitNoteSprite.scale = Vector2(0.5, 0.5)
-	self.add_child(hitNoteSprite)
+	var timelineNote:TimelineNote = TimelineNote.new()
+	timelineNote.currentPositionX = pos.x
+	timelineNote.position = pos
+	timelineNote.hitNoteTexture = load("res://icon.svg")
+	noteContainer.add_child(timelineNote)
+
+
+# ----- TIMELINE POSITION FUNCTIONS -----
+
 
 ## Assigns the closest snap position to [member snappedPosition] based on the mouse position on the timeline.
 func get_snapped_position():
@@ -212,6 +356,10 @@ func _set_timeline_height():
 	if baseControl.size.y != timelineHeight:
 		baseControl.custom_minimum_size.y = timelineHeight
 		baseControl.size.y = timelineHeight
+
+
+# ----- BEAT TIME FUNCTIONS -----
+
 
 func _get_whole_beat_times():
 	if !wholeBeatTimesGenerated and wholeBeatsPerSecond:

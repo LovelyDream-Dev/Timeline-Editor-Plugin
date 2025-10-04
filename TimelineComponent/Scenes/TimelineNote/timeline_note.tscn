@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://he8m4vmf82lk"]
+
+[ext_resource type="Script" uid="uid://dfmp6kgwbwoaf" path="res://TimelineComponent/Scenes/TimelineNote/timeline_note.gd" id="1_sqx8y"]
+
+[node name="Timeline Note" type="Node2D"]
+script = ExtResource("1_sqx8y")
