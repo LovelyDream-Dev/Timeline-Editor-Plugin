@@ -24,6 +24,7 @@ bpm = 120.0
 songLengthInSeconds = 180.0
 tickHeight = 80.0
 tickWidth = 2.0
+showCullingRect = true
 snapDivisor = 4
 hideScrollBar = true
 lmbActionName = "LMB"
@@ -56,6 +57,6 @@ z_index = 1
 script = ExtResource("2_1xed5")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-enabled = false
 
 [connection signal="SNAP_DIVISOR_CHANGED" from="." to="ScrollContainer/BaseControl/BeatTicks" method="_on_timeline_2d_snap_divisor_changed"]
+[connection signal="SCROLL_CHANGED" from="ScrollContainer" to="." method="_on_scroll_container_scroll_changed"]

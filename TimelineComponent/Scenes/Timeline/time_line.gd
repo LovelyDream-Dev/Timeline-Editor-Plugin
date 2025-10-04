@@ -7,6 +7,7 @@ signal SNAP_DIVISOR_CHANGED
 @onready var scrollContainer:ScrollContainer = $ScrollContainer
 @onready var baseControl:ColorRect = $ScrollContainer/BaseControl
 @onready var noteContainer:Node2D = $ScrollContainer/BaseControl/NoteContainer
+@onready var camera = get_viewport().get_camera_2d()
 
 @export_category("Colors")
 ## The color of the timeline background
@@ -36,6 +37,10 @@ signal SNAP_DIVISOR_CHANGED
 @export var tickHeight:float
 ## The width of the beat ticks
 @export var tickWidth:float
+## If it is true, the rectanlge that is used for tick and timeline note culling will be drawn.
+@export var showCullingRect:bool
+## Determines margin around the culling rectangle that ticks and timeline notes will actually cull at.
+@export var cullingMargin:float = 100.0
 ## Determines the amount of ticks between each whole beat.
 @export_range(1,16) var snapDivisor:int:
 	set(value):
@@ -134,6 +139,7 @@ func _ready() -> void:
 	place_timeline_note(3)
 	place_timeline_note(4)
 	_init_timeline_size()
+	cull_notes()
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
@@ -171,9 +177,6 @@ func _input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	queue_redraw()
 	select_notes_by_drag()
-	# Stops this function from running in the editor
-	if Engine.is_editor_hint():
-		return
 
 	mouseBeatPosition = (mouseTimelinePosition / pixelsPerWholeBeat) 
 	get_snapped_position()
@@ -220,22 +223,6 @@ func draw_selection_rectangle(pos:Vector2):
 
 # ----- TIMELINE _NOTE FUNCTIONS -----
 
-
-func shift_overlapping_notes():
-	var sharedPositions:Dictionary = {}
-
-	for timelineNote:TimelineNote in noteContainer.get_children():
-		var posX = timelineNote.currentPositionX
-		if not sharedPositions.has(posX):
-			sharedPositions[posX] = []
-		sharedPositions[posX].append(timelineNote)
-
-	for posX in sharedPositions.keys():
-		var group = sharedPositions[posX]
-		if group.size() > 1:
-			for i in range(group.size()):
-				group[i].position.y -= i*5
-
 ## Selects timeline notes on mouse click. Can only select individual notes if none are already selected.
 func select_notes_by_click(event:InputEvent):
 	if get_tree().get_node_count_in_group("selectedNotes") > 0:
@@ -277,7 +264,6 @@ func start_note_drag():
 
 func drag_notes():
 	if !dragSelectStarted:
-		shift_overlapping_notes()
 		for timelineNote:TimelineNote in get_tree().get_nodes_in_group("selectedNotes"):
 			var dragDistance = (snappedPixel - dragNoteStartPosX)
 			timelineNote.position.x = timelineNote.currentPositionX + dragDistance
@@ -307,10 +293,7 @@ func get_highest_timeline_note_z_index(list:Array) -> Node2D:
 				highest = timelineNote
 	return highest
 
-func get_timeline_position_from_beat(beat:float) -> Vector2:
-	var posx = beat * pixelsPerWholeBeat
-	var posy = self.get_rect().size.y/2
-	return Vector2(posx, posy)
+
 
 func place_timeline_note(beat:float):
 	var pos = get_timeline_position_from_beat(beat)
@@ -323,6 +306,22 @@ func place_timeline_note(beat:float):
 
 # ----- TIMELINE POSITION FUNCTIONS -----
 
+
+func cull_notes():
+	var scrollContainerRect:Rect2 = scrollContainer.get_rect()
+	var cullingRect = Rect2(scrollContainerRect.position - Vector2(cullingMargin, cullingMargin), scrollContainerRect.size + Vector2(cullingMargin * 2.0, cullingMargin * 2.0))
+	cullingRect.position.x += scrollContainer.scroll_horizontal
+	for timelineNote:TimelineNote in noteContainer.get_children():
+		if !cullingRect.has_point(timelineNote.position):
+			if !timelineNote.is_in_group("culledTimelineNotes"): 
+				timelineNote.add_to_group("culledTimelineNotes")
+			timelineNote.hide()
+			timelineNote.process_mode = Node.PROCESS_MODE_DISABLED
+
+func get_timeline_position_from_beat(beat:float) -> Vector2:
+	var posx = beat * pixelsPerWholeBeat
+	var posy = self.get_rect().size.y/2
+	return Vector2(posx, posy)
 
 ## Assigns the closest snap position to [member snappedPosition] based on the mouse position on the timeline.
 func get_snapped_position():
@@ -359,7 +358,6 @@ func _set_timeline_height():
 
 
 # ----- BEAT TIME FUNCTIONS -----
-
 
 func _get_whole_beat_times():
 	if !wholeBeatTimesGenerated and wholeBeatsPerSecond:
@@ -406,3 +404,10 @@ func _get_if_ticks_are_drawable() -> bool:
 	if secondsPerWholeBeat != 0.0 and wholeBeatsPerSecond != 0.0:
 		return true
 	else: return false
+
+
+# ----- SIGNAL FUNCTIONS -----
+
+
+func _on_scroll_container_scroll_changed() -> void:
+	cull_notes()

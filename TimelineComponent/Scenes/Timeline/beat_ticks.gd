@@ -1,5 +1,7 @@
 extends Node2D
 
+@onready var camera = get_viewport().get_camera_2d()
+
 var rootNode:Timeline
 var scrollContainer:ScrollContainer
 
@@ -8,13 +10,16 @@ var initialTicksDrawn:bool
 # The last scroll position of the scrollContainer. Used to determine if the scroll container has scrolled.
 var lastScrollX:float = 0
 
+var cullingMargin:float
+var showCullingRect:bool
+
 func _ready() -> void:
 	rootNode = get_parent().get_parent().get_parent()
 	scrollContainer = get_parent().get_parent()
 
 func _process(_delta: float) -> void:
-	if Engine.is_editor_hint():
-		return
+	cullingMargin = rootNode.cullingMargin
+	showCullingRect = rootNode.showCullingRect
 
 	if !initialTicksDrawn and rootNode._get_if_ticks_are_drawable():
 		queue_redraw()
@@ -24,18 +29,28 @@ func _process(_delta: float) -> void:
 	var currentScrollX = scrollContainer.scroll_horizontal
 	if lastScrollX != currentScrollX:
 		lastScrollX = currentScrollX
-		_on_scroll_changed()
+		on_scroll_changed()
 
 func _draw_beat_ticks(BeatTime:float, tickHeight:float, tickWidth:float, tickColor:Color, rounded:bool):
 	var xPosition = rootNode._get_timeline_position_from_song_position(BeatTime)
 	var yCenter = rootNode.get_rect().size.y/2
 	
-	# --- BEAT TICK CULLING WITH MARGIN --- 
-	var margin = 50
-	var leftMax = scrollContainer.scroll_horizontal - margin
-	var rightMax = scrollContainer.scroll_horizontal + scrollContainer.get_rect().size.x + margin
-	if xPosition < leftMax or xPosition > rightMax:
+	#  \/ --- BEAT TICK CULLING WITH MARGIN --- \/
+
+	# Get the visible rect of the scrollcontainer
+	var scrollContainerRect:Rect2 = scrollContainer.get_rect()
+	var cullingRect = Rect2(scrollContainerRect.position - Vector2(cullingMargin, cullingMargin), scrollContainerRect.size + Vector2(cullingMargin * 2.0, cullingMargin * 2.0))
+	cullingRect.position.x += scrollContainer.scroll_horizontal
+	var tickPos = Vector2(xPosition, yCenter)
+	if !cullingRect.has_point(tickPos):
 		return
+	if showCullingRect:
+		var visualDefaultRect:Rect2 = scrollContainerRect
+		visualDefaultRect.position.x += scrollContainer.scroll_horizontal
+		draw_rect(cullingRect, Color.YELLOW, false)
+		draw_rect(visualDefaultRect, Color.RED, false)
+	
+	# /\ --- BEAT TICK CULLING WITH MARGIN --- /\
 
 	draw_line(Vector2(xPosition, yCenter + (tickHeight/2)), Vector2(xPosition, yCenter - (tickHeight/2)), tickColor, tickWidth, true)
 	if rounded:
@@ -100,11 +115,11 @@ func _draw() -> void:
 				_draw_beat_ticks(sixteenthBeatTime, tickHeight, tickwidth, rootNode.sixteenthBeatTickColor, rootNode.roundedTicks)
 
 ## Refreshes beat ticks
-func _refresh_ticks():
+func refresh_ticks():
 	queue_redraw()
 
-func _on_scroll_changed():
-	_refresh_ticks()
+func on_scroll_changed():
+	refresh_ticks()
 
-func _on_timeline_2d_snap_divisor_changed() -> void:
-	_refresh_ticks()
+func on_timeline_2d_snap_divisor_changed() -> void:
+	refresh_ticks()

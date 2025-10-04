@@ -16,7 +16,6 @@ var startBeat:float
 var endBeat:float
 var side:int
 
-var hasMouse:bool
 var isSelected:bool:
 	set(value):
 		isSelected = value
