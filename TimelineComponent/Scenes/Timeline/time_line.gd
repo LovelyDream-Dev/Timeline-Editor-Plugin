@@ -134,11 +134,11 @@ func _ready() -> void:
 	secondsPerWholeBeat = (60/bpm)
 	pixelsPerWholeBeat = secondsPerWholeBeat * pixelsPerSecond
 	totalWholeBeats = floori(wholeBeatsPerSecond * songLengthInSeconds)
-	place_timeline_note(1)
-	place_timeline_note(2)
-	place_timeline_note(3)
-	place_timeline_note(4)
-	_init_timeline_size()
+	place_timeline_note(1,1)
+	place_timeline_note(2,2)
+	place_timeline_note(3,3)
+	place_timeline_note(4,5)
+	init_timeline_size()
 	cull_notes()
 
 func _input(event: InputEvent) -> void:
@@ -180,20 +180,20 @@ func _process(_delta: float) -> void:
 
 	mouseBeatPosition = (mouseTimelinePosition / pixelsPerWholeBeat) 
 	get_snapped_position()
-	_set_timeline_height()
+	set_timeline_height()
 	if hideScrollBar and scrollContainer.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_SHOW_NEVER:
 		scrollContainer.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	elif !hideScrollBar and scrollContainer.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_SHOW_NEVER:
 		scrollContainer.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
 		
-	baseControl.custom_minimum_size.x = _get_timeline_length_from_song_length()
+	baseControl.custom_minimum_size.x = get_timeline_length_from_song_length()
 	baseControl.color = backgroundColor
 	
-	_get_whole_beat_times()
-	_get_half_beat_times()
-	_get_quarter_beat_times()
-	_get_eighth_beat_times()
-	_get_sixteenth_beat_times()
+	get_whole_beat_times()
+	get_half_beat_times()
+	get_quarter_beat_times()
+	get_eighth_beat_times()
+	get_sixteenth_beat_times()
 
 func _draw() -> void:
 	if dragSelectStarted:
@@ -294,12 +294,17 @@ func get_highest_timeline_note_z_index(list:Array) -> Node2D:
 	return highest
 
 
-
-func place_timeline_note(beat:float):
-	var pos = get_timeline_position_from_beat(beat)
+## Places notes on the timeline at the correct position using [member beat].
+func place_timeline_note(startBeat:float, endBeat:float):
+	var startPos = get_timeline_position_from_beat(startBeat)
+	var endPos = get_timeline_position_from_beat(endBeat)
 	var timelineNote:TimelineNote = TimelineNote.new()
-	timelineNote.currentPositionX = pos.x
-	timelineNote.position = pos
+	timelineNote.startBeat = startBeat
+	timelineNote.endBeat = endBeat
+	timelineNote.startPos = startPos
+	timelineNote.endPos = endPos
+	timelineNote.currentPositionX = startPos.x
+	timelineNote.position = startPos
 	timelineNote.hitNoteTexture = load("res://icon.svg")
 	noteContainer.add_child(timelineNote)
 
@@ -324,7 +329,6 @@ func cull_notes():
 			timelineNote.remove_from_group("culledTimelineNotes")
 			timelineNote.show()
 			timelineNote.process_mode = Node.PROCESS_MODE_INHERIT
-		
 
 func get_timeline_position_from_beat(beat:float) -> Vector2:
 	var posx = beat * pixelsPerWholeBeat
@@ -338,22 +342,22 @@ func get_snapped_position():
 	snappedPixel = snappedBeat * pixelsPerWholeBeat
 	snappedSongPosition = snappedBeat * secondsPerWholeBeat
 
-func _get_timeline_length_from_song_length() -> float: 
+func get_timeline_length_from_song_length() -> float: 
 	return songLengthInSeconds * pixelsPerSecond
 
 ## Uses [method valueInSeconds] to find the related pixel position on the timeline. [br]Returns [code]0.0[/code] if [method valueInSeconds] is greater than [method songLengthInSeconds].
-func _get_timeline_position_from_song_position(valueinSeconds:float) -> float:
+func get_timeline_position_x_from_song_position(valueinSeconds:float) -> float:
 	if valueinSeconds <= songLengthInSeconds:
 		return valueinSeconds * pixelsPerSecond
 	else: 
 		return 0.0
 	
-func _init_timeline_size():
+func init_timeline_size():
 	self.size = Vector2(get_viewport_rect().size.x, timelineHeight)
 	scrollContainer.size = Vector2(get_viewport_rect().size.x, timelineHeight)
 	baseControl.size = Vector2(get_viewport_rect().size.x, timelineHeight)
 
-func _set_timeline_height():
+func set_timeline_height():
 	if self.size.y != timelineHeight: 
 		self.custom_minimum_size.y = timelineHeight
 		self.size.y = timelineHeight
@@ -367,7 +371,7 @@ func _set_timeline_height():
 
 # ----- BEAT TIME FUNCTIONS -----
 
-func _get_whole_beat_times():
+func get_whole_beat_times():
 	if !wholeBeatTimesGenerated and wholeBeatsPerSecond:
 		wholeBeatTimes.clear()
 		for beatIndex in range(totalWholeBeats):
@@ -375,7 +379,7 @@ func _get_whole_beat_times():
 			wholeBeatTimes.append(beatTime)
 		wholeBeatTimesGenerated = true
 
-func _get_half_beat_times():
+func get_half_beat_times():
 	if !halfBeatTimesGenerated and wholeBeatsPerSecond:
 		halfBeatTimes.clear()
 		for beatIndex in range(totalWholeBeats*2):
@@ -383,7 +387,7 @@ func _get_half_beat_times():
 			halfBeatTimes.append(beatTime)
 		halfBeatTimesGenerated = true
 
-func _get_quarter_beat_times():
+func get_quarter_beat_times():
 	if !quarterBeatTimesGenerated and wholeBeatsPerSecond:
 		quarterBeatTimes.clear()
 		for beatIndex in range(totalWholeBeats*4):
@@ -391,7 +395,7 @@ func _get_quarter_beat_times():
 			quarterBeatTimes.append(beatTime)
 		quarterBeatTimesGenerated = true
 
-func _get_eighth_beat_times():
+func get_eighth_beat_times():
 	if !eighthBeatTimesGenerated and wholeBeatsPerSecond:
 		eighthBeatTimes.clear()
 		for beatIndex in range(totalWholeBeats*8):
@@ -399,7 +403,7 @@ func _get_eighth_beat_times():
 			eighthBeatTimes.append(beatTime)
 		eighthBeatTimesGenerated = true
 
-func _get_sixteenth_beat_times():
+func get_sixteenth_beat_times():
 	if !sixteenthBeatTimesGenerated and wholeBeatsPerSecond:
 		sixteenthBeatTimes.clear()
 		for beatIndex in range(totalWholeBeats*16):
@@ -408,7 +412,7 @@ func _get_sixteenth_beat_times():
 		sixteenthBeatTimesGenerated = true
 
 ## Returns true if the necessary values to draw ticks are ready.
-func _get_if_ticks_are_drawable() -> bool:
+func get_if_ticks_are_drawable() -> bool:
 	if secondsPerWholeBeat != 0.0 and wholeBeatsPerSecond != 0.0:
 		return true
 	else: return false

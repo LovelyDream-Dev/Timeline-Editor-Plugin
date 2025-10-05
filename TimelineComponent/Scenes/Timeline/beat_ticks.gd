@@ -21,7 +21,7 @@ func _process(_delta: float) -> void:
 	cullingMargin = rootNode.cullingMargin
 	showCullingRect = rootNode.showCullingRect
 
-	if !initialTicksDrawn and rootNode._get_if_ticks_are_drawable():
+	if !initialTicksDrawn and rootNode.get_if_ticks_are_drawable():
 		queue_redraw()
 		initialTicksDrawn = true
 
@@ -31,8 +31,8 @@ func _process(_delta: float) -> void:
 		lastScrollX = currentScrollX
 		on_scroll_changed()
 
-func _draw_beat_ticks(BeatTime:float, tickHeight:float, tickWidth:float, tickColor:Color, rounded:bool):
-	var xPosition = rootNode._get_timeline_position_from_song_position(BeatTime)
+func draw_beat_ticks(BeatTime:float, tickHeight:float, tickWidth:float, tickColor:Color, rounded:bool):
+	var xPosition = rootNode.get_timeline_position_x_from_song_position(BeatTime)
 	var yCenter = rootNode.get_rect().size.y/2
 	
 	#  \/ --- BEAT TICK CULLING WITH MARGIN --- \/
@@ -58,7 +58,7 @@ func _draw_beat_ticks(BeatTime:float, tickHeight:float, tickWidth:float, tickCol
 		draw_circle(Vector2(xPosition, yCenter - (tickHeight/2)), tickWidth/2, tickColor, true, -1.0, true)
 
 ## Checks if the given tick time is overlapped with another tick time of a different type (1: Whole tick 2: half tick 4: quarter tick, etc...), allowing said time to be excluded if it is a member of a smaller snap divisor. [br]Whole ticks are never excluded, tick type of 1 will have no effect.
-func _get_if_tick_time_overlaps(tickTime:float, tickType:int):
+func get_if_tick_time_overlaps(tickTime:float, tickType:int):
 	if tickType == 2: # half ticks
 		if tickTime in rootNode.wholeBeatTimes:
 			return true
@@ -80,39 +80,39 @@ func _draw() -> void:
 		var tickwidth = rootNode.tickWidth if isFourth else rootNode.tickWidth * 0.7
 		var fourthTickHeight:float = rootNode.get_rect().size.y-10
 		var tickHeight = fourthTickHeight if isFourth else rootNode.tickHeight * 0.95
-		_draw_beat_ticks(wholeBeatTime, tickHeight, tickwidth, rootNode.wholeBeatTickColor, rootNode.roundedTicks)
+		draw_beat_ticks(wholeBeatTime, tickHeight, tickwidth, rootNode.wholeBeatTickColor, rootNode.roundedTicks)
 
 	# Draw half ticks
 	if rootNode.snapDivisor >= 2: 
 		for halfBeatTime in rootNode.halfBeatTimes:
-			if !_get_if_tick_time_overlaps(halfBeatTime, 2):
+			if !get_if_tick_time_overlaps(halfBeatTime, 2):
 				var tickHeight = rootNode.tickHeight * 0.85
 				var tickwidth = rootNode.tickWidth * 0.65
-				_draw_beat_ticks(halfBeatTime, tickHeight, tickwidth, rootNode.halfBeatTickColor, rootNode.roundedTicks)
+				draw_beat_ticks(halfBeatTime, tickHeight, tickwidth, rootNode.halfBeatTickColor, rootNode.roundedTicks)
 
 	# Draw quarter ticks
 	if rootNode.snapDivisor >= 4: 
 		for quarterBeatTime in rootNode.quarterBeatTimes: 
-			if !_get_if_tick_time_overlaps(quarterBeatTime, 4):
+			if !get_if_tick_time_overlaps(quarterBeatTime, 4):
 				var tickHeight = rootNode.tickHeight * 0.75
 				var tickwidth = rootNode.tickWidth * 0.6
-				_draw_beat_ticks(quarterBeatTime, tickHeight, tickwidth, rootNode.quarterBeatTickColor, rootNode.roundedTicks)
+				draw_beat_ticks(quarterBeatTime, tickHeight, tickwidth, rootNode.quarterBeatTickColor, rootNode.roundedTicks)
 
 	# Draw eighth ticks
 	if rootNode.snapDivisor >= 8: 
 		for eighthBeatTime in rootNode.eighthBeatTimes: 
-			if !_get_if_tick_time_overlaps(eighthBeatTime, 8):
+			if !get_if_tick_time_overlaps(eighthBeatTime, 8):
 				var tickHeight = rootNode.tickHeight * 0.65
 				var tickwidth = rootNode.tickWidth * 0.55
-				_draw_beat_ticks(eighthBeatTime, tickHeight, tickwidth, rootNode.eighthBeatTickColor, rootNode.roundedTicks)
+				draw_beat_ticks(eighthBeatTime, tickHeight, tickwidth, rootNode.eighthBeatTickColor, rootNode.roundedTicks)
 
 	# Draw sixteenth ticks
 	if rootNode.snapDivisor >= 16: 
 		for sixteenthBeatTime in rootNode.sixteenthBeatTimes: 
-			if !_get_if_tick_time_overlaps(sixteenthBeatTime, 16):
+			if !get_if_tick_time_overlaps(sixteenthBeatTime, 16):
 				var tickHeight = rootNode.tickHeight * 0.55
 				var tickwidth = rootNode.tickWidth * 0.5
-				_draw_beat_ticks(sixteenthBeatTime, tickHeight, tickwidth, rootNode.sixteenthBeatTickColor, rootNode.roundedTicks)
+				draw_beat_ticks(sixteenthBeatTime, tickHeight, tickwidth, rootNode.sixteenthBeatTickColor, rootNode.roundedTicks)
 
 ## Refreshes beat ticks
 func refresh_ticks():
