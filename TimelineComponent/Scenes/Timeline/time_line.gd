@@ -311,12 +311,20 @@ func cull_notes():
 	var scrollContainerRect:Rect2 = scrollContainer.get_rect()
 	var cullingRect = Rect2(scrollContainerRect.position - Vector2(cullingMargin, cullingMargin), scrollContainerRect.size + Vector2(cullingMargin * 2.0, cullingMargin * 2.0))
 	cullingRect.position.x += scrollContainer.scroll_horizontal
+	# cull
 	for timelineNote:TimelineNote in noteContainer.get_children():
 		if !cullingRect.has_point(timelineNote.position):
 			if !timelineNote.is_in_group("culledTimelineNotes"): 
 				timelineNote.add_to_group("culledTimelineNotes")
 			timelineNote.hide()
 			timelineNote.process_mode = Node.PROCESS_MODE_DISABLED
+	# revive
+	for timelineNote:TimelineNote in get_tree().get_nodes_in_group("culledTimelineNotes"):
+		if cullingRect.has_point(timelineNote.position):
+			timelineNote.remove_from_group("culledTimelineNotes")
+			timelineNote.show()
+			timelineNote.process_mode = Node.PROCESS_MODE_INHERIT
+		
 
 func get_timeline_position_from_beat(beat:float) -> Vector2:
 	var posx = beat * pixelsPerWholeBeat
