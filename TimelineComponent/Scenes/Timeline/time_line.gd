@@ -156,7 +156,7 @@ func _input(event: InputEvent) -> void:
 		if get_tree().get_node_count_in_group("selectedNotes") == 0:
 			if !dragSelectStarted:
 				dragSelectStarted = true
-				dragSelectStartPosition = event.position
+				dragSelectStartPosition = get_global_mouse_position()
 		else:
 			if dragSelectStarted:
 				deselect_notes(null)
@@ -212,11 +212,11 @@ func on_bpm_changed(value):
 # ----- DRAWING FUNCTIONS -----
 
 
+## Draws the rectangle for multi note selection
 func draw_selection_rectangle(pos:Vector2):
 	var mousePos = get_local_mouse_position()
-	var topLeft = Vector2(min(pos.x, mousePos.x), min(pos.y, mousePos.y))
-	var movingCorner = Vector2(abs(mousePos.x - pos.x), abs(mousePos.y - pos.y))
-	dragSelectionRect = Rect2(topLeft, movingCorner)
+	var movingCorner = Vector2(mousePos.x - pos.x, mousePos.y - pos.y)
+	dragSelectionRect = Rect2(pos, movingCorner)
 	draw_rect(dragSelectionRect, Color(1, 1, 1, 0.5), true)
 	draw_rect(dragSelectionRect, Color(1, 1, 1, 1), false)
 
@@ -239,7 +239,7 @@ func select_notes_by_drag():
 			return
 	else:
 		for timelineNote:TimelineNote in noteContainer.get_children():
-			if dragSelectionRect.has_point(noteContainer.to_local(timelineNote.global_position)):
+			if dragSelectionRect.abs().has_point(noteContainer.to_local(timelineNote.global_position)):
 				timelineNote.isSelected = true
 
 ## De-selects [member note] if it is not [code]null[/code]. Otherwise it de-selects all notes in group [member selectedNotes].
